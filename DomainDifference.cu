@@ -1,8 +1,7 @@
 #include "DomainDifference.cuh"
 #include "define.cuh"
 
-#define RHO__throw__local(description)                                         \
-	RHO__throw(DomainDefference, __func__, description);
+#define RHO__throw__local(desc) RHO__throw(DomainDefference, __func__, desc)
 
 namespace rho {
 
@@ -56,25 +55,25 @@ RayCastData DomainDifference::RayCast(const Ray& ray) const {
 	size_t i(0);
 	size_t j(0);
 
-	bool last_rcdv_b_to(rcdv_b.back()->type.to());
+	bool last_rcdv_b_to(rcdv_b.back()->phase.to());
 
 	while (i != rcdv_a.size()) {
 		if (rcdv_a[i] < rcdv_b[j]) {
-			if (!rcdv_b[j]->type.fr()) return Move(rcdv_a[i]);
+			if (!rcdv_b[j]->phase.fr()) return Move(rcdv_a[i]);
 			++i;
 		} else if (rcdv_b[j] < rcdv_a[i]) {
-			if (rcdv_a[i]->type.fr()) {
-				rcdv_b[j]->type.set(!rcdv_b[j]->type.fr(), true);
+			if (rcdv_a[i]->phase.fr()) {
+				rcdv_b[j]->phase.set(!rcdv_b[j]->phase.fr(), true);
 				return Move(rcdv_b[j]);
 			}
 
 			++j;
 		} else {
-			bool fr(rcdv_a[i]->type.fr() && !rcdv_b[j]->type.fr());
-			bool to(rcdv_a[i]->type.to() && rcdv_b[j]->type.to());
+			bool fr(rcdv_a[i]->phase.fr() && !rcdv_b[j]->phase.fr());
+			bool to(rcdv_a[i]->phase.to() && rcdv_b[j]->phase.to());
 
 			if (fr || to) {
-				rcdv_a[i]->type.set(fr, to);
+				rcdv_a[i]->phase.set(fr, to);
 				return Move(rcdv_a[i]);
 			}
 
@@ -93,7 +92,8 @@ RayCastData DomainDifference::RayCast(const Ray& ray) const {
 }
 
 void DomainDifference::RayCastForRender(RayCastDataPair& rcdp,
-	ComponentCollider* cmpt_collider, const Ray& ray) const {
+										ComponentCollider* cmpt_collider,
+										const Ray& ray) const {
 	RayCastDataVector rcdv_b;
 	this->domain_b_->RayCastFull(rcdv_b, ray);
 
@@ -110,13 +110,13 @@ void DomainDifference::RayCastForRender(RayCastDataPair& rcdp,
 	size_t i(0);
 	size_t j(0);
 
-	bool last_rcdv_b_to(rcdv_b.back()->type.to());
+	bool last_rcdv_b_to(rcdv_b.back()->phase.to());
 
 	while (i != rcdv_a.size()) {
 		if (rcdv_a[i] < rcdv_b[j]) {
 			if (rcdp[1] <= rcdv_a[i]) { return; }
 
-			if (!rcdv_b[j]->type.fr()) {
+			if (!rcdv_b[j]->phase.fr()) {
 				if (rcdv_a[i] < rcdp[0]) {
 					rcdp[1] = Move(rcdp[0]);
 					rcdp[0] = Move(rcdv_a[i]);
@@ -129,8 +129,8 @@ void DomainDifference::RayCastForRender(RayCastDataPair& rcdp,
 		} else if (rcdv_b[j] < rcdv_a[i]) {
 			if (rcdp[1] <= rcdv_b[j]) { return; }
 
-			if (rcdv_a[i]->type.fr()) {
-				rcdv_b[j]->type.set(!rcdv_b[j]->type.fr(), true);
+			if (rcdv_a[i]->phase.fr()) {
+				rcdv_b[j]->phase.set(!rcdv_b[j]->phase.fr(), true);
 
 				if (rcdv_b[j] < rcdp[0]) {
 					rcdp[1] = Move(rcdp[0]);
@@ -144,11 +144,11 @@ void DomainDifference::RayCastForRender(RayCastDataPair& rcdp,
 		} else {
 			if (rcdp[1] <= rcdv_a[i]) { return; }
 
-			bool fr(rcdv_a[i]->type.fr() && !rcdv_b[j]->type.fr());
-			bool to(rcdv_a[i]->type.to() && rcdv_b[j]->type.to());
+			bool fr(rcdv_a[i]->phase.fr() && !rcdv_b[j]->phase.fr());
+			bool to(rcdv_a[i]->phase.to() && rcdv_b[j]->phase.to());
 
 			if (fr || to) {
-				rcdv_a[i]->type.set(fr, to);
+				rcdv_a[i]->phase.set(fr, to);
 
 				if (rcdv_a[i] < rcdp[0]) {
 					rcdp[1] = Move(rcdp[0]);
@@ -184,8 +184,8 @@ void DomainDifference::RayCastForRender(RayCastDataPair& rcdp,
 	return;
 }
 
-bool DomainDifference::RayCastFull(
-	RayCastDataVector& dst, const Ray& ray) const {
+bool DomainDifference::RayCastFull(RayCastDataVector& dst,
+								   const Ray& ray) const {
 	RayCastDataVector rcdv_a;
 	bool phase_a(this->domain_a_->RayCastFull(rcdv_a, ray));
 
@@ -207,16 +207,16 @@ bool DomainDifference::RayCastFull(
 	size_t i(0);
 	size_t j(0);
 
-	bool rcdv_b_to(rcdv_b.back()->type.to());
+	bool rcdv_b_to(rcdv_b.back()->phase.to());
 
 	while (i != rcdv_a.size()) {
 		if (rcdv_a[i] < rcdv_b[j]) {
-			if (!rcdv_b[j]->type.fr()) dst.Push(Move(rcdv_a[i]));
+			if (!rcdv_b[j]->phase.fr()) dst.Push(Move(rcdv_a[i]));
 			++i;
 		} else if (rcdv_b[j] < rcdv_a[i]) {
-			if (rcdv_a[i]->type.fr()) {
-				rcdv_b[j]->type.set(
-					!rcdv_b[j]->type.fr(), !rcdv_b[j]->type.to());
+			if (rcdv_a[i]->phase.fr()) {
+				rcdv_b[j]->phase.set(!rcdv_b[j]->phase.fr(),
+									 !rcdv_b[j]->phase.to());
 				dst.Push(Move(rcdv_b[j]));
 			}
 
@@ -233,11 +233,11 @@ bool DomainDifference::RayCastFull(
 			+------+------+-------+--------+
 			*/
 
-			bool fr(rcdv_a[i]->type.fr() && !rcdv_b[j]->type.fr());
-			bool to(rcdv_a[i]->type.to() && !rcdv_b[j]->type.to());
+			bool fr(rcdv_a[i]->phase.fr() && !rcdv_b[j]->phase.fr());
+			bool to(rcdv_a[i]->phase.to() && !rcdv_b[j]->phase.to());
 
 			if (fr || to) {
-				rcdv_a[i]->type.set(fr, to);
+				rcdv_a[i]->phase.set(fr, to);
 				dst.Push(Move(rcdv_a[i]));
 			}
 
@@ -259,8 +259,8 @@ bool DomainDifference::RayCastFull(
 
 #///////////////////////////////////////////////////////////////////////////////
 
-void DomainDifference::GetTodTan(
-	Num* dst, const RayCastData& rcd, const Num* root_direct) const {
+void DomainDifference::GetTodTan(Num* dst, const RayCastData& rcd,
+								 const Num* root_direct) const {
 	::printf("error\n");
 	assert(false);
 }

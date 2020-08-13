@@ -26,8 +26,6 @@
 
 namespace rho {
 
-id_t Space::id() const { return this->id_; }
-
 bool Space::latest() const {
 	for (const Space* s(this); s; s = s->parent_) {
 		if (!s->latest_) { return false; }
@@ -76,27 +74,15 @@ RHO__cuda const Num* Space::i_root_axis() const { return this->i_root_axis_; }
 #////////////////////////////////////////////////
 #////////////////////////////////////////////////
 
-size_t Space::dim_s() const { return this->dim_s_; }
-size_t Space::dim_p() const { return this->dim_p_; }
-size_t Space::dim_r() const { return this->dim_r_; }
-size_t Space::dim_cp() const { return this->dim_cp_; }
-size_t Space::dim_cr() const { return this->dim_cr_; }
+dim_t Space::dim_s() const { return this->dim_s_; }
+dim_t Space::dim_p() const { return this->dim_p_; }
+dim_t Space::dim_r() const { return this->dim_r_; }
+dim_t Space::dim_cp() const { return this->dim_cp_; }
+dim_t Space::dim_cr() const { return this->dim_cr_; }
 
 #////////////////////////////////////////////////
-/*
-Space* Space::New(size_t dim) {
-	return new(Malloc<Space>(1)) Space(dim);
-}
 
-Space* Space::New(size_t dim, Space* parent) {
-	return new(Malloc<Space>(1)) Space(dim, parent);
-}
-*/
-#////////////////////////////////////////////////
-
-Space::Space(size_t dim):
-	id_(Manager::get_code()),
-
+Space::Space(dim_t dim):
 	latest_(false),
 
 	manager_(new Manager(this)), root_(this), parent_(nullptr),
@@ -107,9 +93,7 @@ Space::Space(size_t dim):
 	RHO__debug_if(RHO__max_dim < dim) RHO__throw__local("dim error");
 }
 
-Space::Space(size_t dim, Space* parent):
-	id_(Manager::get_code()),
-
+Space::Space(dim_t dim, Space* parent):
 	latest_(false),
 
 	manager_(parent->manager_), root_(parent->root_), parent_(parent),

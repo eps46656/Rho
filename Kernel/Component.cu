@@ -1,59 +1,50 @@
-#include"define.cuh"
-#include"Kernel.cuh"
+#include "define.cuh"
+#include "Kernel.cuh"
 
 namespace rho {
 
-bool Component::PriorityCmp::operator()(
-	const Component* x, const Component* y) {
-
+bool Component::PriorityCmp::operator()(const Component* x,
+										const Component* y) {
 	return x->active_ && (!y->active_ || x->priority_ > y->priority_);
 }
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-code_t Component::id()const { return this->id_; }
+bool Component::active() const { return this->active_; }
+bool Component::latest() const { return this->latest_; }
 
-bool Component::active()const { return this->active_; }
-bool Component::latest()const { return this->latest_; }
+priority_t Component::priority() const { return this->priority_; }
 
-priority_t Component::priority()const { return this->priority_; }
+Manager* Component::manager() const { return this->manager_; }
+Space* Component::root() const { return this->root_; }
+Object* Component::object() const { return this->object_; }
 
-Manager* Component::manager()const { return this->manager_; }
-Space* Component::root()const { return this->root_; }
-Object* Component::object()const { return this->object_; }
+size_t Component::dim_r() const { return this->dim_r_; }
 
-size_t Component::dim_r()const { return this->dim_r_; }
+#///////////////////////////////////////////////////////////////////////////////
 
-#////////////////////////////////////////////////
-
-Component::Component(Type type, Object* object) :
-	id_(Manager::get_code()),
+Component::Component(Type type, Object* object):
 	type(type),
 
-	active_(true),
-	latest_(false),
+	active_(true), latest_(false),
 
-	manager_(object->manager_),
-	root_(object->root_),
-	object_(object),
+	manager_(object->manager_), root_(object->root_), object_(object),
 
 	dim_r_(object->dim_r_) {
-
 	this->manager_->AddComponent_(this);
 	this->object_->AddComponent_(this);
 }
 
 Component::~Component() {}
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 void Component::SetLatestFalse_() { this->latest_ = false; }
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 void Component::Active(bool active) {
-	if (active == this->active_)
-		return;
+	if (active == this->active_) return;
 
 	if (active) {
 		this->object_->ActiveSelfAndAncestor();
@@ -72,10 +63,8 @@ void Component::Delete() {
 	Free(this);
 }
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-bool operator<(const Component& x, const Component& y) {
-	return x.id() < y.id();
-}
+bool operator<(const Component& x, const Component& y) { return &x < &y; }
 
 }

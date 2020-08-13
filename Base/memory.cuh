@@ -1,7 +1,6 @@
 #ifndef RHO__define_guard__Base__memory_cuh
 #define RHO__define_guard__Base__memory_cuh
 
-#include "../define.cuh"
 #include "operator.cuh"
 
 namespace rho {

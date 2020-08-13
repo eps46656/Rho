@@ -16,9 +16,6 @@ class Manager final: private cntr::BidirectionalNode {
 	friend class Camera;
 
 public:
-	RHO__cuda static const cntr::BidirectionalNode* instance();
-	RHO__cuda static size_t get_code();
-
 	RHO__cuda const RBT<Space*>& space() const;
 	RHO__cuda const RBT<Object*>& object() const;
 	RHO__cuda const ComponentContainer& cmpt() const;
@@ -58,7 +55,6 @@ public:
 		const cntr::Vector<ComponentCollider*>& cmpt_collider) const;
 
 private:
-	RHO__cuda static cntr::BidirectionalNode* instance_();
 	RHO__cuda static Map_t<code_t, void*>& id_ptr_();
 
 #///////////////////////////////////////////////////////////////////////////////

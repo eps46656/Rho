@@ -80,13 +80,13 @@ bool DomainStretch::Contain(const Num* root_point) const {
 			auto rcd(New<RayCastDataCore_>());                                 \
 			rcd->domain = this;                                                \
 			rcd->t = rct.t[0];                                                 \
-			rcd->type.set(false, true);                                        \
+			rcd->phase.set(false, true);                                        \
 			dst.Push(rcd);                                                     \
 		}                                                                      \
 		auto rcd(New<RayCastDataCore_>());                                     \
 		rcd->domain = this;                                                    \
 		rcd->t = rct.t[1];                                                     \
-		rcd->type.set(true, false);                                            \
+		rcd->phase.set(true, false);                                            \
 		dst.Push(rcd);                                                         \
 	}
 
@@ -105,7 +105,7 @@ bool DomainStretch::RayCastFull(RayCastDataVector& dst, const Ray& ray) const {
 				auto rcd(New<RayCastDataCore_>());
 				rcd->domain = this;
 				rcd->t = rct.t[0];
-				rcd->type.set(false, false);
+				rcd->phase.set(false, false);
 				dst.Push(rcd);
 			}
 
@@ -123,7 +123,7 @@ bool DomainStretch::RayCastFull(RayCastDataVector& dst, const Ray& ray) const {
 		return false;
 	}
 
-	bool rcdv_fr(rcdv[0]->type.fr());
+	bool rcdv_fr(rcdv[0]->phase.fr());
 
 	while (rct.t[1] < rcdv.back()->t) {
 		rcdv.Pop();
@@ -133,7 +133,7 @@ bool DomainStretch::RayCastFull(RayCastDataVector& dst, const Ray& ray) const {
 		}
 	}
 
-	bool rcdv_to(rcdv.back()->type.to());
+	bool rcdv_to(rcdv.back()->phase.to());
 
 	size_t i(0);
 
@@ -150,17 +150,17 @@ bool DomainStretch::RayCastFull(RayCastDataVector& dst, const Ray& ray) const {
 		auto rcd(New<RayCastDataCore_>());
 		rcd->domain = this;
 		rcd->t = rct.t[0];
-		rcd->type = rcdv[i]->type;
+		rcd->phase = rcdv[i]->phase;
 		rcd->rcd = Move(rcdv[i]);
 		dst.Push(rcd);
 
 		++i;
 		if (i == rcdv.size()) { return false; }
-	} else if (rcdv[i]->type.fr()) {
+	} else if (rcdv[i]->phase.fr()) {
 		auto rcd(New<RayCastDataCore_>());
 		rcd->domain = this;
 		rcd->t = rct.t[0];
-		rcd->type.set(false, true);
+		rcd->phase.set(false, true);
 		dst.Push(rcd);
 	}
 

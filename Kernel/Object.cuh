@@ -13,8 +13,6 @@ class Object {
 	friend class Component;
 
 public:
-	RHO__cuda code_t id()const;
-
 	RHO__cuda bool active()const;
 	RHO__cuda bool latest()const;
 
@@ -47,8 +45,6 @@ public:
 	RHO__cuda void Delete();
 
 private:
-	code_t id_;
-
 	bool active_;
 
 	mutable bool latest_;

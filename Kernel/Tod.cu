@@ -37,8 +37,8 @@ void Tod::OrthMatrix(dim_t dim_s, dim_t dim_r, Num* dst, const Num* src) {
 			temp + RHO__max_dim * dim_s);
 	} else {
 		for (dim_t i(0); i != dim_r; ++i) {
-			for (dim_t j(0); j != RHO__max_dim_r; ++j)
-				src[RHO__max_dim * i + j] = 0;
+			for (dim_t j(0); j != RHO__max_dim; ++j)
+				dst[RHO__max_dim * i + j] = 0;
 		}
 	}
 }

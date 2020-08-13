@@ -3,25 +3,6 @@
 
 namespace rho {
 
-const cntr::BidirectionalNode* Manager::instance() { return instance_(); }
-
-cntr::BidirectionalNode* Manager::instance_() {
-	static cntr::BidirectionalNode* r(nullptr);
-	return r ? r : (r = New<cntr::BidirectionalNode>());
-}
-
-size_t Manager::get_code() {
-	static size_t code(0);
-	return code += 1;
-}
-
-Map_t<code_t, void*>& Manager::id_ptr_() {
-	static Map_t<code_t, void*>* r(nullptr);
-	return *(r ? r : (r = New<Map_t<code_t, void*>>()));
-}
-
-#///////////////////////////////////////////////////////////////////////////////
-
 const RBT<Space*>& Manager::space() const { return this->space_; }
 
 const RBT<Object*>& Manager::object() const { return this->object_; }

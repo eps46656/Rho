@@ -6,11 +6,11 @@
 namespace rho {
 
 struct RayCastDataCore {
-	struct Type {
-		char value;
+	struct Phase {
+		int value;
 
-		RHO__cuda Type(char value = 0);
-		RHO__cuda Type(bool fr, bool to);
+		RHO__cuda Phase(int value = 0);
+		RHO__cuda Phase(bool fr, bool to);
 
 		RHO__cuda bool fr()const;
 		RHO__cuda bool to()const;
@@ -19,13 +19,15 @@ struct RayCastDataCore {
 		RHO__cuda void to(bool to);
 
 		RHO__cuda void set(bool fr, bool to);
+
+		RHO__cuda void reverse();
 	};
 
 	mutable const ComponentCollider* cmpt_collider;
 	mutable const Domain* domain;
 
 	mutable Num t;
-	mutable Type type;
+	mutable Phase phase;
 
 	RHO__cuda virtual ~RayCastDataCore();
 };

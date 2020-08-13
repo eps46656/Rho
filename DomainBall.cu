@@ -1,8 +1,7 @@
 #include "define.cuh"
 #include "DomainBall.cuh"
 
-#define RHO__throw__local(description)                                         \
-	RHO__throw(DomainBall, __func__, description);
+#define RHO__throw__local(desc) RHO__throw(DomainBall, __func__, desc)
 
 namespace rho {
 
@@ -38,7 +37,7 @@ RayCastData DomainBall::RayCast(const Ray& ray) const {
 			auto rcd(New<RayCastDataCore_>());
 			rcd->domain = this;
 			rcd->t = rct.t[0];
-			rcd->type.set(false, rct.t[0] != rct.t[1]);
+			rcd->phase.set(false, rct.t[0] != rct.t[1]);
 			line<RHO__max_dim>(rcd->point, rct.t[0], rct.direct, rct.origin);
 
 			return RayCastData(rcd);
@@ -48,7 +47,7 @@ RayCastData DomainBall::RayCast(const Ray& ray) const {
 			auto rcd(New<RayCastDataCore_>());
 			rcd->domain = this;
 			rcd->t = rct.t[1];
-			rcd->type.set(true, false);
+			rcd->phase.set(true, false);
 			line<RHO__max_dim>(rcd->point, rct.t[1], rct.direct, rct.origin);
 
 			return RayCastData(rcd);
@@ -71,7 +70,7 @@ void DomainBall::RayCastForRender(RayCastDataPair& rcdp,
 		rcd->cmpt_collider = cmpt_collider;
 		rcd->domain = this;
 		rcd->t = rct.t[0];
-		rcd->type.set(false, rct.t[0] != rct.t[1]);
+		rcd->phase.set(false, rct.t[0] != rct.t[1]);
 		line<RHO__max_dim>(rcd->point, rct.t[0], rct.direct, rct.origin);
 
 		if (rct.t[0] < rcdp[0]) {
@@ -88,7 +87,7 @@ void DomainBall::RayCastForRender(RayCastDataPair& rcdp,
 		rcd->cmpt_collider = cmpt_collider;
 		rcd->domain = this;
 		rcd->t = rct.t[1];
-		rcd->type.set(true, false);
+		rcd->phase.set(true, false);
 		line<RHO__max_dim>(rcd->point, rct.t[1], rct.direct, rct.origin);
 
 		if (rct.t[0] < rcdp[0]) {
@@ -108,7 +107,7 @@ bool DomainBall::RayCastFull(RayCastDataVector& dst, const Ray& ray) const {
 			auto rcd(New<RayCastDataCore_>());
 			rcd->domain = this;
 			rcd->t = rct.t[0];
-			rcd->type.set(false, rct.t[0] != rct.t[1]);
+			rcd->phase.set(false, rct.t[0] != rct.t[1]);
 			line<RHO__max_dim>(rcd->point, rct.t[0], rct.direct, rct.origin);
 
 			dst.Push(rcd);
@@ -118,7 +117,7 @@ bool DomainBall::RayCastFull(RayCastDataVector& dst, const Ray& ray) const {
 			auto rcd(New<RayCastDataCore_>());
 			rcd->domain = this;
 			rcd->t = rct.t[1];
-			rcd->type.set(true, false);
+			rcd->phase.set(true, false);
 			line<RHO__max_dim>(rcd->point, rct.t[1], rct.direct, rct.origin);
 
 			dst.Push(rcd);

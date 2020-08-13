@@ -42,7 +42,6 @@
 #define RHO__glb __global__
 #define RHO__dev __device__
 #define RHO__cuda RHO__hst RHO__dev
-#define RHO__shr __shared__
 
 #define RHO__thread_num                                                        \
 	(gridDim.x * gridDim.y * gridDim.z * blockDim.x * blockDim.y * blockDim.z)
@@ -54,6 +53,9 @@
 	 blockIdx.x * blockDim.x * blockDim.y * blockDim.z +                       \
 	 threadIdx.z * blockDim.x * blockDim.y + threadIdx.y * blockDim.x +        \
 	 threadIdx.x)
+	
+#define RHO__dev_block defined __CUDA_ARCH__
+#define RHO__hst_block not defined __CUDA_ARCH__
 
 /*
 #define RHO__hst
@@ -162,8 +164,7 @@ struct Print {};
 template<size_t size> struct Line {};
 
 template<size_t size>
-RHO__cuda inline Print operator<<(Print p,
-										 const Line<size>& line) {
+RHO__cuda inline Print operator<<(Print p, const Line<size>& line) {
 #pragma unroll
 	for (size_t i(0); i != size; ++i) { ::printf("//"); }
 
@@ -215,70 +216,23 @@ RHO__cuda inline Print operator<<(Print p, double x) {
 }
 
 #///////////////////////////////////////////////////////////////////////////////
-
-/*struct PrintList {
-	struct CoreBase {
-		RHO__cuda virtual void Print() const = 0;
-	};
-
-	template<typename T> struct Core: public CoreBase {
-		T&& data;
-
-		CoreBase(T&& x): data(Forward<T>(data)) {}
-
-		RHO__cuda void Print() const override { Print(Forward<T>(data)); }
-	};
-
-#///////////////////////////////////////////////////////////////////////////////
-
-	struct CoreBlock {
-		CoreBase* core[16];
-		CoreBlock* next;
-	};
-
-#///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda static int
+RHO__cuda inline id_t get_id() {
+	// This function is not completed.
+	
+	//The dev version
 
-#///////////////////////////////////////////////////////////////////////////////
-
-		CoreBlock core_block;
-	CoreBlock* end_core_block;
-	char end_index;
-
-#///////////////////////////////////////////////////////////////////////////////
-
-	PrintList() {
-		this->core_block->next = nullptr;
-		this->end_core_block = &this->core_block;
-		this->end_index = 0;
-	}
-
-#///////////////////////////////////////////////////////////////////////////////
-
-	void
-#///////////////////////////////////////////////////////////////////////////////
-
-		void
-		Print() {
-		CoreBlock* n(&this->core_block);
-	}
-
-#///////////////////////////////////////////////////////////////////////////////
-};*/
-
-#///////////////////////////////////////////////////////////////////////////////
-#///////////////////////////////////////////////////////////////////////////////
-#///////////////////////////////////////////////////////////////////////////////
-
-RHO__dev inline id_t get_id() {
-	static_assert(IsSame<id_t, unsigned int>::value ||
+	/*static_assert(IsSame<id_t, unsigned int>::value ||
 					  IsSame<id_t, unsigned long long int>::value,
 				  "id_t type error");
 	static id_t r(0);
-	return atomicAdd(&r, id_t(1));
+	return atomicAdd(&r, id_t(1));*/
+
+	/*The hst version is not complete*/
+
+	return 0;
 }
 
 }

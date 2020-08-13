@@ -3,8 +3,6 @@
 
 namespace rho {
 
-code_t Object::id() const { return this->id_; }
-
 bool Object::active() const { return this->active_; }
 bool Object::latest() const { return this->latest_; }
 
@@ -28,8 +26,6 @@ Material* Object::material() const { return this->material_; }
 #///////////////////////////////////////////////////////////////////////////////
 
 Object::Object(Space* root, Material* material):
-	id_(Manager::get_code()),
-
 	active_(true), latest_(false),
 
 	manager_(root->manager()), root_(root),

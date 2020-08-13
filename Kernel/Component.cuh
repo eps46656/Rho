@@ -21,8 +21,6 @@ public:
 		RHO__cuda bool operator()(const Component* x, const Component* y);
 	};
 
-	RHO__cuda code_t id() const;
-
 	const Type type;
 
 	RHO__cuda bool active() const;
@@ -44,7 +42,7 @@ private:
 	RHO__cuda Component(Type type, Object* object);
 	RHO__cuda virtual ~Component();
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda void SetLatestFalse_();
 	// void Move_();
@@ -54,9 +52,7 @@ private:
 	// will also be modified
 	// when the object::Move_ is called
 
-#////////////////////////////////////////////////
-
-	code_t id_;
+#///////////////////////////////////////////////////////////////////////////////
 
 	bool active_;
 	bool latest_;
@@ -71,6 +67,6 @@ private:
 
 RHO__cuda bool operator<(const Component& x, const Component& y);
 
-}  // namespace rho
+}
 
 #endif

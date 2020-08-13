@@ -10,23 +10,24 @@ public:
 	RHO__cuda Domain* domain() const;
 	RHO__cuda void domain(Domain* domain);
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda DomainComplement(Domain* domain = nullptr);
+	RHO__cuda DomainComplement(Space* root);
+	RHO__cuda DomainComplement(Domain* domain);
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda void Refresh() const override;
-	RHO__cuda bool ReadyForRendering() const override;
+	RHO__cuda bool Refresh() const override;
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda bool Contain(const Vector& root_point) const override;
+	RHO__cuda bool Contain(const Num* root_point) const override;
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda RayCastData RayCast(const Ray& ray) const override;
-	RHO__cuda RayCastDataVector RayCastFull(const Ray& ray) const override;
+	RHO__cuda bool RayCastFull(RayCastDataVector& rcdv,
+							   const Ray& ray) const override;
 	RHO__cuda void RayCastForRender(pair<RayCastData>& rcdp,
 									ComponentCollider* cmpt_collider,
 									const Ray& ray) const override;

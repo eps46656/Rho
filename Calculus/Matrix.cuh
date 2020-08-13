@@ -120,7 +120,8 @@ public:
 	RHO__cuda Vector cross() const;
 
 private:
-	dim_t col_dim_, row_dim_;
+	dim_t col_dim_;
+	dim_t row_dim_;
 };
 
 #///////////////////////////////////////////////////////////////////////////////

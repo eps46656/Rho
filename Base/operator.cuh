@@ -6,121 +6,116 @@
 namespace rho {
 namespace op {
 
-struct true_t;
-struct false_t;
-
-#////////////////////////////////////////////////
-
 template<typename T> struct neg {
 	RHO__cuda auto operator()(const T& x) const { return -x; }
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-template<typename T1, typename T2 = T1> struct eq {
-	RHO__cuda bool operator()(const T1& x, const T2& y) const { return x == y; }
-	RHO__cuda bool operator()(const T2& x, const T1& y) const { return x == y; }
+template<typename X, typename Y = X> struct eq {
+	RHO__cuda bool operator()(const X& x, const Y& y) const { return x == y; }
+	RHO__cuda bool operator()(const Y& y, const X& x) const { return y == x; }
 };
 
 template<typename T> struct eq<T, T> {
 	RHO__cuda bool operator()(const T& x, const T& y) const { return x == y; }
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-template<typename T1, typename T2 = T1> struct ne {
-	RHO__cuda bool operator()(const T1& x, const T2& y) const { return x != y; }
-	RHO__cuda bool operator()(const T2& x, const T1& y) const { return x != y; }
+template<typename X, typename Y = X> struct ne {
+	RHO__cuda bool operator()(const X& x, const Y& y) const { return x != y; }
+	RHO__cuda bool operator()(const Y& y, const X& x) const { return y != x; }
 };
 
 template<typename T> struct ne<T, T> {
 	RHO__cuda bool operator()(const T& x, const T& y) const { return x != y; }
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-template<typename T1, typename T2 = T1> struct lt {
-	RHO__cuda bool operator()(const T1& x, const T2& y) const { return x < y; }
-	RHO__cuda bool operator()(const T2& x, const T1& y) const { return x < y; }
+template<typename X, typename Y = X> struct lt {
+	RHO__cuda bool operator()(const X& x, const Y& y) const { return x < y; }
+	RHO__cuda bool operator()(const Y& y, const X& x) const { return y < x; }
 };
 
 template<typename T> struct lt<T, T> {
 	RHO__cuda bool operator()(const T& x, const T& y) const { return x < y; }
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-template<typename T1, typename T2 = T1> struct le {
-	RHO__cuda bool operator()(const T1& x, const T2& y) const { return x <= y; }
-	RHO__cuda bool operator()(const T2& x, const T1& y) const { return x <= y; }
+template<typename X, typename Y = X> struct le {
+	RHO__cuda bool operator()(const X& x, const Y& y) const { return x <= y; }
+	RHO__cuda bool operator()(const Y& y, const X& x) const { return y <= x; }
 };
 
 template<typename T> struct le<T, T> {
 	RHO__cuda bool operator()(const T& x, const T& y) const { return x <= y; }
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-template<typename T1, typename T2 = T1> struct gt {
-	RHO__cuda bool operator()(const T1& x, const T2& y) const { return x > y; }
-	RHO__cuda bool operator()(const T2& x, const T1& y) const { return x > y; }
+template<typename X, typename Y = X> struct gt {
+	RHO__cuda bool operator()(const X& x, const Y& y) const { return x > y; }
+	RHO__cuda bool operator()(const Y& y, const X& x) const { return y > x; }
 };
 
 template<typename T> struct gt<T, T> {
 	RHO__cuda bool operator()(const T& x, const T& y) const { return x > y; }
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-template<typename T1, typename T2 = T1> struct ge {
-	RHO__cuda bool operator()(const T1& x, const T2& y) const { return x >= y; }
-	RHO__cuda bool operator()(const T2& x, const T1& y) const { return x >= y; }
+template<typename X, typename Y = X> struct ge {
+	RHO__cuda bool operator()(const X& x, const Y& y) const { return x >= y; }
+	RHO__cuda bool operator()(const Y& y, const X& x) const { return y >= x; }
 };
 
 template<typename T> struct ge<T, T> {
 	RHO__cuda bool operator()(const T& x, const T& y) const { return x >= y; }
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 template<typename T> struct log_not {
 	RHO__cuda bool operator()(const T& x) const { return !x; }
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-template<typename T1, typename T2 = T1> struct log_or {
-	RHO__cuda bool operator()(const T1& x, const T2& y) const { return x || y; }
-	RHO__cuda bool operator()(const T2& x, const T1& y) const { return x || y; }
+template<typename X, typename Y = X> struct log_or {
+	RHO__cuda bool operator()(const X& x, const Y& y) const { return x || y; }
+	RHO__cuda bool operator()(const Y& y, const X& x) const { return y || x; }
 };
 
 template<typename T> struct log_or<T, T> {
 	RHO__cuda bool operator()(const T& x, const T& y) const { return x || y; }
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-template<typename T1, typename T2 = T1> struct log_and {
-	RHO__cuda bool operator()(const T1& x, const T2& y) const { return x && y; }
-	RHO__cuda bool operator()(const T2& x, const T1& y) const { return x && y; }
+template<typename X, typename Y = X> struct log_and {
+	RHO__cuda bool operator()(const X& x, const Y& y) const { return x && y; }
+	RHO__cuda bool operator()(const Y& y, const X& x) const { return y && x; }
 };
 
 template<typename T> struct log_and<T, T> {
 	RHO__cuda bool operator()(const T& x, const T& y) const { return x && y; }
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-template<typename T1, typename T2 = T1> struct log_xor {
-	RHO__cuda bool operator()(const T1& x, const T2& y) const { return x ^ y; }
-	RHO__cuda bool operator()(const T2& x, const T1& y) const { return x ^ y; }
+template<typename X, typename Y = X> struct log_xor {
+	RHO__cuda bool operator()(const X& x, const Y& y) const { return x ^ y; }
+	RHO__cuda bool operator()(const Y& y, const X& x) const { return y ^ x; }
 };
 
 template<typename T> struct log_xor<T, T> {
 	RHO__cuda bool operator()(const T& x, const T& y) const { return x ^ y; }
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 template<typename T> struct ptr {
 	RHO__cuda T& operator()(T& x) const { return &x; }
@@ -130,7 +125,7 @@ template<typename T> struct ref {
 	RHO__cuda T& operator()(T* x) const { return *x; }
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 template<typename Src, typename Dst> struct assign {
 	RHO__cuda auto operator()(Dst&& dst, const Src&& src) const {
@@ -150,7 +145,7 @@ template<typename Src, typename Dst> struct move {
 	}
 };
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 template<typename T> struct DefaultCreator {
 	RHO__cuda T operator()() { return T(); }

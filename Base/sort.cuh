@@ -9,8 +9,6 @@
 
 namespace rho {
 
-#////////////////////////////////////////////////
-
 template<typename Iterator>
 RHO__cuda size_t Count(Iterator begin, Iterator end) {
 	size_t r(0);
@@ -51,7 +49,7 @@ RHO__cuda Iterator Max(
 	return r;
 }
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 template<typename Src,
 	typename Compare = op::lt<RmRef_t<decltype(declval<Src>()[0])>>>

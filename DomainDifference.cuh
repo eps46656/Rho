@@ -10,8 +10,8 @@ public:
 	struct RayCastTemp {
 		RayCastDataVector rcdv_a;
 		RayCastDataVector rcdv_b;
-		cntr::Vector<pair<RayCastData*, RayCastDataCore::Type>> rcdv_a_;
-		cntr::Vector<pair<RayCastData*, RayCastDataCore::Type>> rcdv_b_;
+		cntr::Vector<pair<RayCastData*, RayCastDataCore::Phase>> rcdv_a_;
+		cntr::Vector<pair<RayCastData*, RayCastDataCore::Phase>> rcdv_b_;
 	};
 
 #////////////////////////////////////////////////

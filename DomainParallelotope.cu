@@ -68,7 +68,7 @@ RayCastData DomainParallelotope::RayCast(const Ray& ray) const {
 			auto rcd(New<RayCastDataCore_>());
 			rcd->domain = this;
 			rcd->t = rct.t[0];
-			rcd->type.set(false, rct.t[0] != rct.t[1]);
+			rcd->phase.set(false, rct.t[0] != rct.t[1]);
 			rcd->contain_flag = rct.contain_flag[0];
 
 			return RayCastData(rcd);
@@ -78,7 +78,7 @@ RayCastData DomainParallelotope::RayCast(const Ray& ray) const {
 			auto rcd(New<RayCastDataCore_>());
 			rcd->domain = this;
 			rcd->t = rct.t[1];
-			rcd->type.set(true, false);
+			rcd->phase.set(true, false);
 			rcd->contain_flag = rct.contain_flag[1];
 
 			return RayCastData(rcd);
@@ -101,7 +101,7 @@ void DomainParallelotope::RayCastForRender(RayCastDataPair& rcdp,
 		rcd->cmpt_collider = cmpt_collider;
 		rcd->domain = this;
 		rcd->t = rct.t[0];
-		rcd->type.set(false, rct.t[0] != rct.t[1]);
+		rcd->phase.set(false, rct.t[0] != rct.t[1]);
 		rcd->contain_flag = rct.contain_flag[0];
 
 		if (rct.t[0] < rcdp[0]) {
@@ -118,7 +118,7 @@ void DomainParallelotope::RayCastForRender(RayCastDataPair& rcdp,
 		rcd->cmpt_collider = cmpt_collider;
 		rcd->domain = this;
 		rcd->t = rct.t[1];
-		rcd->type.set(true, false);
+		rcd->phase.set(true, false);
 		rcd->contain_flag = rct.contain_flag[1];
 
 		if (rct.t[1] < rcdp[0]) {
@@ -139,7 +139,7 @@ bool DomainParallelotope::RayCastFull(RayCastDataVector& dst,
 			auto rcd(New<RayCastDataCore_>());
 			rcd->domain = this;
 			rcd->t = rct.t[0];
-			rcd->type.set(false, rct.t[0] != rct.t[1]);
+			rcd->phase.set(false, rct.t[0] != rct.t[1]);
 			rcd->contain_flag = rct.contain_flag[0];
 
 			dst.Push(rcd);
@@ -149,7 +149,7 @@ bool DomainParallelotope::RayCastFull(RayCastDataVector& dst,
 			auto rcd(New<RayCastDataCore_>());
 			rcd->domain = this;
 			rcd->t = rct.t[1];
-			rcd->type.set(true, false);
+			rcd->phase.set(true, false);
 			rcd->contain_flag = rct.contain_flag[1];
 
 			dst.Push(rcd);

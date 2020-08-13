@@ -10,8 +10,6 @@ class Space {
 	friend class Component;
 
 public:
-	RHO__cuda id_t id() const;
-
 	RHO__cuda bool latest() const;
 
 	RHO__cuda bool is_root() const;
@@ -36,11 +34,11 @@ public:
 	// p:this->dim_p_
 	// r:this->dim_r_
 
-	RHO__cuda size_t dim_s() const;
-	RHO__cuda size_t dim_p() const;
-	RHO__cuda size_t dim_r() const;
-	RHO__cuda size_t dim_cp() const;
-	RHO__cuda size_t dim_cr() const;
+	RHO__cuda dim_t dim_s() const;
+	RHO__cuda dim_t dim_p() const;
+	RHO__cuda dim_t dim_r() const;
+	RHO__cuda dim_t dim_cp() const;
+	RHO__cuda dim_t dim_cr() const;
 
 #////////////////////////////////////////////////
 
@@ -62,10 +60,10 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda Space(size_t dim);
+	RHO__cuda Space(dim_t dim);
 	// create a root space with dim
 
-	RHO__cuda Space(size_t dim, Space* parent);
+	RHO__cuda Space(dim_t dim, Space* parent);
 	// create a space added to parent as descendant
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -216,8 +214,6 @@ public:
 	RHO__cuda bool Include(const Space* branch) const;
 
 private:
-	code_t id_;
-
 	mutable bool latest_;
 
 	mutable Manager* manager_;

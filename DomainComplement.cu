@@ -1,6 +1,8 @@
 #include "define.cuh"
 #include "DomainComplement.cuh"
 
+#define RHO__throw__local(desc) RHO__throw(DomainComplement, __func__, desc)
+
 namespace rho {
 
 Domain* DomainComplement::domain() const { return this->domain_; }
@@ -9,20 +11,24 @@ void DomainComplement::domain(Domain* domain) { this->domain_ = domain; }
 
 #///////////////////////////////////////////////////////////////////////////////
 
+DomainComplement::DomainComplement(Space* root):
+	DomainComplex(root), domain_(nullptr) {
+	RHO__debug_if(!root->is_root()) RHO__throw_local("root error");
+}
+
 DomainComplement::DomainComplement(Domain* domain):
 	DomainComplex(domain->root()), domain_(domain) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
-void DomainComplement::Refresh() const {}
-
-bool DomainComplement::ReadyForRendering() const {
-	return this->root() == this->domain_->root();
+bool DomainComplement::Refresh() const {
+	return this->domain_ && this->root() == this->domain_->root() &&
+		   this->domain_->Refresh();
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainComplement::Contain(const Vector& root_point) const {
+bool DomainComplement::Contain(const Num* root_point) const {
 	return !this->domain_->Contain(root_point);
 }
 
@@ -31,15 +37,16 @@ bool DomainComplement::Contain(const Vector& root_point) const {
 RayCastData DomainComplement::RayCast(const Ray& ray) const {
 	RayCastData rcd(this->domain_->RayCast(ray));
 
-	if (rcd) { rcd->type.set(!rcd->type.fr(), !rcd->type.to()); }
+	if (rcd) { rcd->phase.reverse(); }
 
 	return rcd;
 }
 
-cntr::Vector<RayCastData> DomainComplement::RayCastFull(const Ray& ray) const {
-	cntr::Vector<RayCastData> rcdv(this->domain_->RayCastFull(ray));
-
-	for (size_t i(0); i != rcdv.size(); ++i) rcdv[i]->type.reverse();
+bool DomainComplement::RayCastFull(RayCastDataVector& rcdv,
+								   const Ray& ray) const {
+	size_t i(rcdv.size());
+	this->domain_->RayCastFull(rcdv, ray);
+	for (; i != rcdv.size(); ++i) { rcdv[i]->phase.reverse(); }
 
 	return rcdv;
 }
@@ -54,10 +61,10 @@ void DomainComplement::RayCastForRender(pair<RayCastData>& rcdp,
 	if (a[1] == rcdp.second) { return; }
 
 	if (a[0] == rcdp.second) {
-		a[0]->type.reverse();
+		a[0]->phase.reverse();
 	} else {
-		if (a[0] != rcdp.first) { a[0]->type.reverse(); }
-		if (a[1] != rcdp.second) { a[1]->type.reverse(); }
+		if (a[0] != rcdp.first) { a[0]->phase.reverse(); }
+		if (a[1] != rcdp.second) { a[1]->phase.reverse(); }
 	}
 }
 

@@ -6,6 +6,8 @@
 #define RHO__throw__local(desc)                                                \
 	RHO__throw(cntr::List<T, Compare>, __func__, desc);
 
+#define RHO__Node(x) static_cast<Node*>(x)
+
 namespace rho {
 namespace cntr {
 
@@ -14,7 +16,8 @@ public:
 	struct Node: public BidirectionalNode {
 		T value;
 
-		template<typename... Args> RHO__cuda Node(Args&&... args);
+		template<typename... Args>
+		RHO__cuda Node(Args&&... args): value(Forward<Args>(args)...) {}
 	};
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -25,19 +28,30 @@ public:
 	public:
 		friend class List<T>;
 
-		RHO__cuda bool operator==(const Iterator_& iter) const;
-		RHO__cuda bool operator!=(const Iterator_& iter) const;
+		RHO__cuda bool operator==(const Iterator_& iter) const {
+			return this->node_ == iter.node_;
+		}
+		RHO__cuda bool operator!=(const Iterator_& iter) const {
+			this->node_ != iter.node_;
+		}
 
-		RHO__cuda T_t& operator*() const;
-		RHO__cuda T_t* operator->() const;
+		RHO__cuda T_t& operator*() const { return *this->node_->value; }
+		RHO__cuda T_t* operator->() const { return this->node_->valeu; }
 
-		RHO__cuda Iterator_& operator++();
-		RHO__cuda Iterator_& operator--();
+		RHO__cuda Iterator_& operator++() {
+			this->node_ = static_cast<Node_t*>(this->node_->next);
+			return *this;
+		}
+
+		RHO__cuda Iterator_& operator--() {
+			this->node_ = static_cast<Node_t*>(this->node_->prev);
+			return *this;
+		}
 
 	private:
 		Node_t* node_;
 
-		RHO__cuda Iterator_(Node_t* node);
+		RHO__cuda Iterator_(Node_t* node): node_(node) {}
 	};
 
 	using Iterator = Iterator_<T, Node>;
@@ -47,200 +61,101 @@ public:
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda size_t size() const;
-	RHO__cuda bool empty() const;
+	RHO__cuda size_t size() const { return this->size_; }
+	RHO__cuda bool empty() const { return !this->size_; }
 
-	RHO__cuda Iterator begin();
-	RHO__cuda Iterator end();
+	RHO__cuda Iterator begin() { return this->node_->next; }
+	RHO__cuda Iterator end() { return this->end_; }
 
-	RHO__cuda ConstIterator begin() const;
-	RHO__cuda ConstIterator end() const;
+	RHO__cuda ConstIterator begin() const { return this->node_->next; }
+	RHO__cuda ConstIterator end() const { return this->end_; }
 
-	RHO__cuda ConstIterator const_begin();
-	RHO__cuda ConstIterator const_end();
-
-#///////////////////////////////////////////////////////////////////////////////
-
-	RHO__cuda List();
-	RHO__cuda List(const List<T>& list);
-	RHO__cuda List(List<T>&& list);
-
-	RHO__cuda ~List();
+	RHO__cuda ConstIterator const_begin() { return this->node_->next; }
+	RHO__cuda ConstIterator const_end() { return this->end_; }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda T& front();
-	RHO__cuda const T& front() const;
+	RHO__cuda List(): size_(0), end_(&this->node_) {}
 
-	RHO__cuda T& back();
-	RHO__cuda const T& back() const;
+	RHO__cuda List(const List<T>& list): size_(list.size_), end_(&this->node_) {
+		for (Node* i(list.node_->next); i != list.node_;
+			 i = static_cast<Node*>(i->next)) {
+			this->node_->PushFront(new Node(i->value));
+		}
+	}
+
+	RHO__cuda List(List<T>&& list): size_(list.size_), end_(list.end_) {
+		list.size_ = 0;
+		Node::Swap(this->node_, list.node_);
+	}
+
+	RHO__cuda ~List() {
+		Node* n(this->node_->next);
+		Node* m;
+
+		while (n != this->end_) {
+			m = n->next;
+			Delete(n);
+			n = m;
+		}
+
+		while (n != this->node_) {
+			m = n->next;
+			Free(n);
+			n = m;
+		}
+	}
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	template<typename... Args> RHO__cuda void PushFront(Args&&... args);
-	template<typename... Args> RHO__cuda void PushBack(Args&&... args);
+#define RHO__F(x) static_cast<Node*>(this->node_->##x##)
+
+	RHO__cuda T& front() { return RHO__F(next)->value; }
+	RHO__cuda const T& front() const { RHO__F(next)->value; }
+
+	RHO__cuda T& back() { return RHO__F(prev)->value; }
+	RHO__cuda const T& back() const { return RHO__F(prev)->value; }
+
+#undef RHO__F
+
+#///////////////////////////////////////////////////////////////////////////////
+
+	template<typename... Args> RHO__cuda void PushFront(Args&&... args) {
+		++this->size_;
+
+		if (this->end_ == &this->node_) {
+			this->node_.PushBack(new Node(Forward<Args>(args)...));
+			return;
+		}
+
+		Node::Swap(this->node_->prev, this->node_);
+		new (&static_cast<Node*>(this->node_->next)->value)
+			T(Forward<Args>(args));
+
+		if (this->end_ == this->node_->next) { this->end_ = &this->node_; }
+	}
+
+	template<typename... Args> RHO__cuda void PushBack(Args&&... args) {
+		++this->size_;
+
+		if (this->end_ == &this->node_) {
+			this->node_.PushFront(new Node(Forward<Args>(args)...));
+			return;
+		}
+
+		new (&static_cast<Node*>(this->end_)->value) T(Forward<Args>(args));
+		this->end_ = this->end_->next;
+	}
 
 private:
 	size_t size_;
+	BidirectionalNode* end_;
 	BidirectionalNode node_;
 };
-
-#///////////////////////////////////////////////////////////////////////////////
-#///////////////////////////////////////////////////////////////////////////////
-#///////////////////////////////////////////////////////////////////////////////
-
-template<typename T> size_t List<T>::size() const { return this->size_; }
-
-template<typename T> bool List<T>::empty() const { return !this->size_; }
-
-#///////////////////////////////////////////////////////////////////////////////
-
-template<typename T> List<T>::Iterator List<T>::begin() {
-	return this->node_->next;
-}
-template<typename T> List<T>::Iterator List<T>::end() { return this->node_; }
-
-template<typename T> List<T>::ConstIterator List<T>::begin() const {
-	return this->node_->next;
-}
-template<typename T> List<T>::ConstIterator List<T>::end() const {
-	return this->node_;
-}
-
-template<typename T> List<T>::ConstIterator List<T>::const_begin() {
-	return this->node_->next;
-}
-template<typename T> List<T>::ConstIterator List<T>::const_end() {
-	return this->node_;
-}
-
-#///////////////////////////////////////////////////////////////////////////////
-
-template<typename T> List<T>::List(): size_(0) {}
-
-template<typename T> List<T>::List(const List<T>& list): size_(list.size_) {
-	for (Node* i(list.node_->next); i != list.node_;
-		 i = static_cast<Node*>(i->next)) {
-		this->node_->PushFront(new Node(i->value));
-	}
-}
-
-template<typename T> List<T>::List(List<T>&& list): size_(list.size_) {
-	list.size_ = 0;
-	Node::Swap(this->node_, list.node_);
-}
-
-template<typename T> List<T>::~List() {
-	Node* n(this->node_->next);
-	Node* m;
-
-	while (n != this->node_) {
-		m = n->next;
-		Delete(n);
-		n = m;
-	}
-}
-
-#///////////////////////////////////////////////////////////////////////////////
-
-template<typename T> T& List<T>::front() {
-	return static_cast<Node*>(this->node_->next)->value;
-}
-
-template<typename T> const T& List<T>::front() const {
-	return static_cast<Node*>(this->node_->next)->value;
-}
-
-template<typename T> T& List<T>::back() {
-	return static_cast<Node*>(this->node_->prev)->value;
-}
-
-template<typename T> const T& List<T>::back() const {
-	return static_cast<Node*>(this->node_->prev)->value;
-}
-
-#///////////////////////////////////////////////////////////////////////////////
-
-template<typename T>
-template<typename... Args>
-void List<T>::PushFront(Args&&... args) {
-	++this->size_;
-	this->node_.PushBack(new Node(Forward<Args>(args)...));
-}
-
-template<typename T>
-template<typename... Args>
-void List<T>::PushBack(Args&&... args) {
-	++this->size_;
-	this->node_.PushFront(new Node(Forward<Args>(args)...));
-}
-
-#///////////////////////////////////////////////////////////////////////////////
-#///////////////////////////////////////////////////////////////////////////////
-#///////////////////////////////////////////////////////////////////////////////
-
-template<typename T>
-template<typename... Args>
-List<T>::Node::Node(Args&&... args): value(Forward<Args>(args)...) {}
-
-#///////////////////////////////////////////////////////////////////////////////
-#///////////////////////////////////////////////////////////////////////////////
-#///////////////////////////////////////////////////////////////////////////////
-
-#define RHO__list_iter List<T>::Iterator_<T_t, Node_t>
-
-template<typename T>
-template<typename T_t, typename Node_t>
-RHO__list_iter::Iterator_(Node_t* node): node_(node) {}
-
-#///////////////////////////////////////////////////////////////////////////////
-
-template<typename T>
-template<typename T_t, typename Node_t>
-bool RHO__list_iter::operator==(const Iterator_& iter) const {
-	return this->node_ == iter.node_;
-}
-
-template<typename T>
-template<typename T_t, typename Node_t>
-bool RHO__list_iter::operator!=(const Iterator_& iter) const {
-	return this->node_ != iter.node_;
-}
-
-#///////////////////////////////////////////////////////////////////////////////
-
-template<typename T>
-template<typename T_t, typename Node_t>
-T_t& RHO__list_iter::operator*() const {
-	return *this->node_;
-}
-
-template<typename T>
-template<typename T_t, typename Node_t>
-T_t* RHO__list_iter::operator->() const {
-	return this->node_;
-}
-
-#///////////////////////////////////////////////////////////////////////////////
-
-template<typename T>
-template<typename T_t, typename Node_t>
-RHO__list_iter& RHO__list_iter::operator--() {
-	this->node_ = static_cast<Node_t*>(this->node_->prev);
-	return *this;
-}
-
-template<typename T>
-template<typename T_t, typename Node_t>
-RHO__list_iter& RHO__list_iter::operator++() {
-	this->node_ = static_cast<Node_t*>(this->node_->next);
-	return *this;
-}
 
 }
 }
 
 #undef RHO__throw__local
-#undef RHO__list_iter
 
 #endif

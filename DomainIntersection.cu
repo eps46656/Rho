@@ -1,54 +1,29 @@
 #include "define.cuh"
 #include "DomainIntersection.h"
 
-#define RHO__throw__local(description)                                         \
-	RHO__throw(DomainIntersection, __func__, description);
+#define RHO__throw__local(desc) RHO__throw(DomainIntersection, __func__, desc)
 
 namespace rho {
 
-const cntr::Vector<Domain*>& DomainIntersection::domain() const {
-	return this->domain_;
-}
+cntr::RBT<Domain*>& DomainIntersection::domain() { return this->domain_; }
 
-void DomainIntersection::add_domain(Domain* domain) {
-	this->domain_.Push(domain);
+const cntr::RBT<Domain*>& DomainIntersection::domain() const {
+	return this->domain_;
 }
 
 #////////////////////////////////////////////////
 
-DomainIntersection::DomainIntersection(const cntr::Vector<Domain*>& domain):
-	DomainComplex(domain[0]->root()), domain_(domain) {}
-
-DomainIntersection::DomainIntersection(std::initializer_list<Domain*> domain):
-	DomainComplex((*domain.begin())->root()),
-	domain_(domain.begin(), domain.end()) {}
+DomainIntersection::DomainIntersection(Space* root): DomainComplex(root) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
-void DomainIntersection::Refresh() const {
-	auto iter(this->domain_.begin());
+bool DomainIntersection::Refresh() const {
 	auto end(this->domain_.end());
 
-	Sort(iter, end);
-
-	for (; iter != end; ++iter) {
-		RHO__debug_if(std::count(iter + 1, end, *iter))
-			RHO__throw__local("domain error");
-
-		(*iter)->Refresh();
-	}
-}
-
-bool DomainIntersection::ReadyForRendering() const {
-	auto iter(this->domain_.begin());
-	auto end(this->domain_.end());
-
-	Sort(iter, end);
-
-	for (; iter != end; ++iter) {
-		RHO__debug_if(rho::Contain(iter + 1, end, *iter)) return false;
-
-		if (!(*iter)->ReadyForRendering()) { return false; }
+	for (auto iter(this->domain_.begin()); iter != end; ++iter) {
+		if (this->root() != (*iter)->root() || !(*iter)->Refresh()) {
+			return false
+		}
 	}
 
 	return true;
@@ -96,8 +71,8 @@ bool DomainIntersection::FullContain(const Vector& root_point) const {
 	return true;
 }
 
-Domain::ContainType DomainIntersection::GetContainType(
-	const Vector& root_point) const {
+Domain::ContainType
+DomainIntersection::GetContainType(const Vector& root_point) const {
 	ContainType cont(ContainType::none);
 
 	auto iter(this->domain_.begin());
@@ -157,8 +132,8 @@ RayCastData DomainIntersection::RayCast(const Ray& ray) const {
 	return r;
 }
 
-cntr::Vector<RayCastData> DomainIntersection::RayCastFull(
-	const Ray& ray) const {
+cntr::Vector<RayCastData>
+DomainIntersection::RayCastFull(const Ray& ray) const {
 	switch (this->domain_.size()) {
 		case 0: return {};
 		case 1: return this->domain_[0]->RayCastFull(ray);
@@ -195,8 +170,8 @@ cntr::Vector<RayCastData> DomainIntersection::RayCastFull(
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainIntersection::IsTanVector(
-	const Vector& root_point, const Vector& root_vector) const {
+bool DomainIntersection::IsTanVector(const Vector& root_point,
+									 const Vector& root_vector) const {
 	RHO__debug_if(this->dim_r() != root_point.size() ||
 				  this->dim_r() != root_vector.size()) {
 		RHO__throw__local("dim error");
