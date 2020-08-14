@@ -7,8 +7,8 @@ namespace rho {
 
 class DomainIntersection: public DomainComplex {
 public:
-	RHO__cuda cntr::RBT<Domain*>& domain();
-	RHO__cuda const cntr::RBT<Domain*>& domain() const;
+	RHO__cuda RBT<Domain*>& domain();
+	RHO__cuda const RBT<Domain*>& domain() const;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -24,8 +24,8 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda RayCastData RayCast(const Ray& ray) const override;
-	RHO__cuda RayCastDataVector RayCastFull(const Ray& ray) const override;
+	RHO__cuda bool RayCastFull(RayCastDataVector& rcdv,
+							   const Ray& ray) const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -33,7 +33,12 @@ public:
 							 const Num* root_direct) const;
 
 private:
-	cntr::RBT<Domain*> domain_;
+	RBT<Domain*> domain_;
+
+#///////////////////////////////////////////////////////////////////////////////
+
+	RHO__cuda static void RayCast_(RayCastDataVector& dst, RayCastDataVector& a,
+								   RayCastDataVector& b);
 };
 
 }

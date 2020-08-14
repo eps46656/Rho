@@ -13,7 +13,7 @@ void DomainComplement::domain(Domain* domain) { this->domain_ = domain; }
 
 DomainComplement::DomainComplement(Space* root):
 	DomainComplex(root), domain_(nullptr) {
-	RHO__debug_if(!root->is_root()) RHO__throw_local("root error");
+	RHO__debug_if(!root->is_root()) RHO__throw__local("root error");
 }
 
 DomainComplement::DomainComplement(Domain* domain):
@@ -34,38 +34,36 @@ bool DomainComplement::Contain(const Num* root_point) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
+void DomainComplement::RayCastForRender(RayCastDataPair& rcdp,
+										ComponentCollider* cmpt_collider,
+										const Ray& ray) const {
+	RayCastDataCore* a[2]{ rcdp[0], rcdp[1] };
+
+	this->domain_->RayCastForRender(rcdp, cmpt_collider, ray);
+
+	if (a[1] == rcdp[1]) { return; }
+
+	if (a[0] == rcdp[1]) {
+		a[0]->phase.reverse();
+	} else {
+		if (a[0] != rcdp[0]) { a[0]->phase.reverse(); }
+		if (a[1] != rcdp[1]) { a[1]->phase.reverse(); }
+	}
+}
+
 RayCastData DomainComplement::RayCast(const Ray& ray) const {
 	RayCastData rcd(this->domain_->RayCast(ray));
-
 	if (rcd) { rcd->phase.reverse(); }
-
 	return rcd;
 }
 
 bool DomainComplement::RayCastFull(RayCastDataVector& rcdv,
 								   const Ray& ray) const {
 	size_t i(rcdv.size());
-	this->domain_->RayCastFull(rcdv, ray);
+	bool phase(this->domain_->RayCastFull(rcdv, ray));
 	for (; i != rcdv.size(); ++i) { rcdv[i]->phase.reverse(); }
 
-	return rcdv;
-}
-
-void DomainComplement::RayCastForRender(pair<RayCastData>& rcdp,
-										ComponentCollider* cmpt_collider,
-										const Ray& ray) const {
-	RayCastDataCore* a[2] = { rcdp.first, rcdp.second };
-
-	this->domain_->RayCastForRender(rcdp, cmpt_collider, ray);
-
-	if (a[1] == rcdp.second) { return; }
-
-	if (a[0] == rcdp.second) {
-		a[0]->phase.reverse();
-	} else {
-		if (a[0] != rcdp.first) { a[0]->phase.reverse(); }
-		if (a[1] != rcdp.second) { a[1]->phase.reverse(); }
-	}
+	return !phase;
 }
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -80,17 +78,5 @@ void DomainComplement::GetTodTan(Num* dst, const RayCastData& rcd,
 size_t DomainComplement::Complexity() const {
 	return this->domain_->Complexity();
 }
-
-/*
-bool DomainComplement::IsTanVector(
-	const Vector& root_point, const Vector& root_vector)const {
-
-	switch (this->domain_->GetContainType(root_point)) {
-		case ContainType::none:return true;
-		case ContainType::full:return false;
-	}
-
-	return this->domain_->IsTanVector(root_point, root_vector);
-}*/
 
 }

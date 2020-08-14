@@ -77,13 +77,8 @@ RHO__glb void Camera_Render_pre_(const Camera* camera, size_t size) {
 
 		auto iter(object.begin());
 
-		if (RHO__debug_flag) {
-			for (auto end(object.end()); iter != end; ++iter)
-				if (!(*iter)->Refresh())
-					RHO__throw__local("ReadyForRendering error");
-		} else {
-			for (auto end(object.end()); iter != end; ++iter)
-				(*iter)->Refresh();
+		for (auto end(object.end()); iter != end; ++iter) {
+			if (!(*iter)->Refresh()) { RHO__throw__local("Refresh error"); }
 		}
 	}
 
@@ -99,7 +94,7 @@ RHO__glb void Camera_Render_pre_(const Camera* camera, size_t size) {
 		auto iter(cmpt_cntr.begin());
 
 		for (auto end(cmpt_cntr.end()); iter != end; ++iter) {
-			if (!(*iter)->Refresh()) RHO__throw__local("Refresh error");
+			if (!(*iter)->Refresh()) { RHO__throw__local("Refresh error"); }
 
 			switch ((*iter)->type) {
 				case Component::Type::collider: {
@@ -125,21 +120,23 @@ RHO__glb void Camera_Render_pre_(const Camera* camera, size_t size) {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	camera->direct_f_.set_dim(3);
-	camera->direct_h_.set_dim(3);
-	camera->direct_w_.set_dim(3);
+	{
+		const Num* a[]{ camera->ref_->root_axis(),
+						camera->ref_->root_axis() + RHO__max_dim,
+						camera->ref_->root_axis() + RHO__max_dim * 2 };
 
-	Copy(camera->dim_r_, camera->direct_f_, camera->ref_->root_axis());
-	Copy(camera->dim_r_, camera->direct_h_,
-		 camera->ref_->root_axis() + RHO__max_dim);
-	Copy(camera->dim_r_, camera->direct_w_,
-		 camera->ref_->root_axis() + RHO__max_dim * 2);
+#pragma unroll
+		for (dim_t i(0); i != RHO__max_dim; ++i)
+			camera->direct_f_[i] = a[0][i] - a[1][i] - a[2][i];
 
-	camera->direct_f_ -= camera->direct_h_;
-	camera->direct_f_ -= camera->direct_w_;
+#pragma unroll
+		for (dim_t i(0); i != RHO__max_dim; ++i)
+			camera->direct_h_[i] = a[1][i] * 2 / camera->image_height_;
 
-	camera->direct_h_ *= Num(2) / camera->image_height_;
-	camera->direct_w_ *= Num(2) / camera->image_width_;
+#pragma unroll
+		for (dim_t i(0); i != RHO__max_dim; ++i)
+			camera->direct_w_[i] = a[2][i] * 2 / camera->image_width_;
+	}
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -421,7 +418,7 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 				Vector::Copy(next_task->ray.direct, reflection_vector);
 				next_task->dist = task->dist;
 				next_task->depth = task->depth + 1;
-				next_task->decay = Move(next_decay);
+				next_task->decay = next_decay;
 
 				++task_size;
 			}

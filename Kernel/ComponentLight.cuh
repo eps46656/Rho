@@ -9,12 +9,7 @@ namespace rho {
 
 class ComponentLight: public Component {
 public:
-	RHO__cuda const Num3& intensity() const;
-
-#///////////////////////////////////////////////////////////////////////////////
-
 	RHO__cuda ComponentLight(Object* object);
-	RHO__cuda ComponentLight(Object* object, const Num3& intensity);
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -23,14 +18,10 @@ public:
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda virtual Num3
-	intensity(const Vector& root_point, const Tod& tod,
+	intensity(const Num* root_point, const Tod& tod,
 			  const cntr::Vector<ComponentCollider*>& cmpt_collider,
-			  const Vector& reflection_vector,
-			  const Texture::Data& texture_data, Ray& ray,
-			  Num pre_distance) const = 0;
-
-protected:
-	Num3 intensity_;
+			  const Num* reflection_vector, const Texture::Data& texture_data,
+			  Ray& ray, Num pre_dist) const = 0;
 };
 
 }

@@ -1,28 +1,25 @@
 #include "define.cuh"
-#include "DomainIntersection.h"
+#include "DomainIntersection.cuh"
 
 #define RHO__throw__local(desc) RHO__throw(DomainIntersection, __func__, desc)
 
 namespace rho {
 
-cntr::RBT<Domain*>& DomainIntersection::domain() { return this->domain_; }
+RBT<Domain*>& DomainIntersection::domain() { return this->domain_; }
+const RBT<Domain*>& DomainIntersection::domain() const { return this->domain_; }
 
-const cntr::RBT<Domain*>& DomainIntersection::domain() const {
-	return this->domain_;
-}
-
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 DomainIntersection::DomainIntersection(Space* root): DomainComplex(root) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
 bool DomainIntersection::Refresh() const {
-	auto end(this->domain_.end());
+	auto iter(this->domain_.begin());
 
-	for (auto iter(this->domain_.begin()); iter != end; ++iter) {
+	for (auto end(this->domain_.end()); iter != end; ++iter) {
 		if (this->root() != (*iter)->root() || !(*iter)->Refresh()) {
-			return false
+			return false;
 		}
 	}
 
@@ -31,163 +28,128 @@ bool DomainIntersection::Refresh() const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainIntersection::Contain(const Vector& root_point) const {
+bool DomainIntersection::Contain(const Num* root_point) const {
 	if (this->domain_.empty()) { return false; }
-
-	auto iter(this->domain_.begin());
-
-	for (auto end(this->domain_.end()); iter != end; ++iter)
-		if (!(*iter)->Contain(root_point)) { return false; }
-
-	return true;
-}
-
-bool DomainIntersection::EdgeContain(const Vector& root_point) const {
-	if (this->domain_.empty()) { return false; }
-
-	auto iter(this->domain_.begin());
-	auto end(this->domain_.end());
-
-	for (; iter != end; ++iter) {
-		ContainType contain_type = (*iter)->GetContainType(root_point);
-		if (contain_type == ContainType::none) { return false; }
-		if (contain_type == ContainType::edge) { break; }
-	}
-
-	for (end = this->domain_.end(); iter != end; ++iter)
-		if (!(*iter)->EdgeContain(root_point)) { return false; }
-
-	return true;
-}
-
-bool DomainIntersection::FullContain(const Vector& root_point) const {
-	if (this->domain_.empty()) { return false; }
-
-	auto iter(this->domain_.begin());
-
-	for (auto end(this->domain_.end()); iter != end; ++iter)
-		if (!(*iter)->EdgeContain(root_point)) { return false; }
-
-	return true;
-}
-
-Domain::ContainType
-DomainIntersection::GetContainType(const Vector& root_point) const {
-	ContainType cont(ContainType::none);
 
 	auto iter(this->domain_.begin());
 
 	for (auto end(this->domain_.end()); iter != end; ++iter) {
-		cont = (*iter)->GetContainType(root_point);
-		if (cont == ContainType::none) { return ContainType::none; }
+		if (!(*iter)->Contain(root_point)) { return false; }
+	}
 
-		if (cont == ContainType::edge) {
-			for (++iter; iter != end; ++iter) {
-				if (!(*iter)->Contain(root_point)) return ContainType::none;
+	return true;
+}
+
+#///////////////////////////////////////////////////////////////////////////////
+
+bool DomainIntersection::RayCastFull(RayCastDataVector& dst,
+									 const Ray& ray) const {
+	switch (this->domain_.size()) {
+		case 0: return false;
+		case 1: return (*this->domain_.begin())->RayCastFull(dst, ray);
+	}
+
+	cntr::Vector<RayCastDataVector> rcdvv;
+	rcdvv.Reserve(this->domain_.size());
+	rcdvv.Resize(1);
+
+	{
+		auto iter(this->domain_.begin());
+		size_t size(0);
+
+		for (auto end(this->domain_.end()); iter != end; ++iter) {
+			if (size == rcdvv.size()) { rcdvv.Push(); }
+
+			bool phase((*iter)->RayCastFull(rcdvv.back(), ray));
+
+			if (rcdvv.back().empty()) {
+				if (!phase) { return false; }
+			} else {
+				++size;
 			}
 		}
+
+		rcdvv.Resize(size);
 	}
 
-	return cont;
+	if (rcdvv.size() == 2) {
+		RayCast_(dst, rcdvv[0], rcdvv[1]);
+	} else {
+		RayCastDataVector temp;
+		RayCast_(temp, rcdvv[0], rcdvv[1]);
+
+		for (size_t i(2); i != rcdvv.size() - 1; ++i) {
+			rcdvv[0] = Move(temp);
+			RayCast_(temp, rcdvv[0], rcdvv[i]);
+		}
+
+		RayCast_(dst, temp, rcdvv.back());
+	}
+
+	return false;
+}
+
+void DomainIntersection::RayCast_(RayCastDataVector& dst, RayCastDataVector& a,
+								  RayCastDataVector& b) {
+	if (a.empty()) {
+		if (b.size()) { dst = Move(b); }
+		return;
+	}
+
+	if (b.empty()) {
+		dst = Move(a);
+		return;
+	}
+
+	size_t i(0);
+	size_t j(0);
+
+	bool a_to(a.back()->phase.to());
+	bool b_to(b.back()->phase.to());
+
+	for (;;) {
+		if (a[i] < b[j]) {
+			if (b[j]->phase.fr()) { dst.Push(Move(a[i])); }
+			++i;
+		} else if (b[j] < a[i]) {
+			if (a[i]->phase.fr()) { dst.Push(Move(b[j])); }
+			++j;
+		} else {
+			bool fr(a[i]->phase.fr() && b[j]->phase.fr());
+			bool to(a[i]->phase.to() && b[j]->phase.to());
+
+			if (fr || to) {
+				a[i]->phase.set(fr, to);
+				dst.Push(Move(a[i]));
+			}
+
+			++i;
+			++j;
+		}
+
+		if (i == a.size()) {
+			if (a_to) {
+				for (; j != b.size(); ++j) { dst.Push(Move(b[j])); }
+			}
+
+			return;
+		}
+
+		if (j == b.size()) {
+			if (b_to) {
+				for (; i != a.size(); ++i) { dst.Push(Move(a[i])); }
+			}
+
+			return;
+		}
+	}
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-RayCastData DomainIntersection::RayCast(const Ray& ray) const {
-	switch (this->domain_.size()) {
-		case 0: return RayCastData(false);
-		case 1: return this->domain_[0]->RayCast(ray);
-	}
-
-	RayCastData r;
-
-	auto domain_i(this->domain_.begin());
-
-	for (auto domain_end(this->domain_.end()); domain_i != domain_end;
-		 ++domain_i) {
-		cntr::Vector<RayCastData> rcdv((*domain_i)->RayCastFull(ray));
-
-		if (rcdv.empty()) { continue; }
-
-		auto rcdv_iter(rcdv.begin());
-		auto rcdv_end(rcdv.end());
-
-		Sort(rcdv_iter, rcdv_end);
-
-		for (; rcdv_iter != rcdv_end && (*rcdv_iter) < r; ++rcdv_iter) {
-			auto domain_j(this->domain_.begin());
-
-			for (; domain_j != domain_i; ++domain_j)
-				if (!(*domain_j)->Contain((*rcdv_iter)->root_point)) goto A;
-
-			for (++domain_j; domain_j != domain_end; ++domain_j)
-				if (!(*domain_j)->Contain((*rcdv_iter)->root_point)) goto A;
-
-			r = Move(*rcdv_iter);
-			break;
-		A:;
-		}
-	}
-
-	return r;
-}
-
-cntr::Vector<RayCastData>
-DomainIntersection::RayCastFull(const Ray& ray) const {
-	switch (this->domain_.size()) {
-		case 0: return {};
-		case 1: return this->domain_[0]->RayCastFull(ray);
-	}
-
-	cntr::Vector<RayCastData> r;
-
-	auto domain_i(this->domain_.begin());
-
-	for (auto domain_end(this->domain_.end()); domain_i != domain_end;
-		 ++domain_i) {
-		cntr::Vector<RayCastData> rcdv((*domain_i)->RayCastFull(ray));
-
-		if (rcdv.empty()) { continue; }
-
-		auto rcd_i(rcdv.begin());
-
-		for (auto rcd_end(rcdv.end()); rcd_i != rcd_end; ++rcd_i) {
-			auto domain_j(this->domain_.begin());
-
-			for (; domain_j != domain_i; ++domain_j)
-				if (!(*domain_j)->Contain((*rcd_i)->root_point)) goto A;
-
-			for (++domain_j; domain_j != domain_end; ++domain_j)
-				if (!(*domain_j)->Contain((*rcd_i)->root_point)) goto A;
-
-			r.Push(Move(*rcd_i));
-		A:;
-		}
-	}
-
-	return r;
-}
-
-#///////////////////////////////////////////////////////////////////////////////
-
-bool DomainIntersection::IsTanVector(const Vector& root_point,
-									 const Vector& root_vector) const {
-	RHO__debug_if(this->dim_r() != root_point.size() ||
-				  this->dim_r() != root_vector.size()) {
-		RHO__throw__local("dim error");
-	}
-
-	auto iter(this->domain_.begin());
-
-	for (auto end(this->domain_.end()); iter != end; ++iter) {
-		switch ((*iter)->GetContainType(root_point)) {
-			case ContainType::none: return false;
-			case ContainType::edge:
-				return (*iter)->IsTanVector(root_point, root_vector);
-		}
-	}
-
-	return true;
+void DomainIntersection::GetTodTan(Num* dst, const RayCastData& rcd,
+								   const Num* root_direct) const {
+	RHO__throw__local("call error");
 }
 
 }

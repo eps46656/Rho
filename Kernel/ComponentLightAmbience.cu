@@ -3,10 +3,17 @@
 
 namespace rho {
 
+Num3& ComponentLightAmbience::intensity() { return this->intensity_; }
+const Num3& ComponentLightAmbience::intensity() const {
+	return this->intensity_;
+}
+
+#///////////////////////////////////////////////////////////////////////////////
+
 ComponentLightAmbience::ComponentLightAmbience(Object* object,
 											   const Num3& intensity):
-
-	ComponentLight(object, intensity) {}
+	ComponentLight(object),
+	intensity_(intensity) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -18,10 +25,10 @@ bool ComponentLightAmbience::Refresh() const {
 #///////////////////////////////////////////////////////////////////////////////
 
 Num3 ComponentLightAmbience::intensity(
-	const Vector& root_point, const Tod& tod,
+	const Num* root_point, const Tod& tod,
 	const cntr::Vector<ComponentCollider*>& cmpt_collider,
-	const Vector& reflection_vector, const Texture::Data& texture_data,
-	Ray& ray, Num pre_distance) const {
+	const Num* reflection_vector, const Texture::Data& texture_data, Ray& ray,
+	Num pre_distance) const {
 	Num a(pow(pre_distance, 0.1));
 	Num3 r;
 

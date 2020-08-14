@@ -7,13 +7,15 @@ namespace rho {
 
 Space* ComponentLightPoint::ref() const { return this->ref_; }
 
+Num3& ComponentLightPoint::intensity() { return this->intensity_; }
+const Num3& ComponentLightPoint::intensity() const { return this->intensity_; }
+
 #///////////////////////////////////////////////////////////////////////////////
 
 ComponentLightPoint::ComponentLightPoint(Object* object, Space* ref,
 										 const Num3& intensity):
-
-	ComponentLight(object, intensity),
-	ref_(ref) {}
+	ComponentLight(object),
+	intensity_(intensity), ref_(ref) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -25,15 +27,15 @@ bool ComponentLightPoint::Refresh() const {
 #///////////////////////////////////////////////////////////////////////////////
 
 Num3 ComponentLightPoint::intensity(
-	const Vector& root_point, const Tod& tod,
+	const Num* root_point, const Tod& tod,
 	const cntr::Vector<ComponentCollider*>& cmpt_collider,
-	const Vector& reflection_vector, const Texture::Data& texture_data,
-	Ray& ray, Num pre_dist) const {
+	const Num* reflection_vector, const Texture::Data& texture_data, Ray& ray,
+	Num pre_dist) const {
 	// from light point to hit point
 
 	Vec direct;
 	Vector::sub(direct, root_point, this->ref_->root_origin());
-	
+
 	Num face_angle_cos(angle_cos(this->dim_r(), direct, tod.orth));
 	bool indirect(face_angle_cos.lt<0>());
 

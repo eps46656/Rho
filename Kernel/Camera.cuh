@@ -96,9 +96,9 @@ private:
 	mutable cntr::Vector<ComponentCollider*> cmpt_collider_;
 	mutable cntr::Vector<ComponentLight*> cmpt_light_;
 
-	mutable Vector direct_f_;
-	mutable Vector direct_h_;
-	mutable Vector direct_w_;
+	mutable Vec direct_f_;
+	mutable Vec direct_h_;
+	mutable Vec direct_w_;
 
 	// mutable pair<cntr::BidirectionalNode*> task_stack_[thread_num];
 	// thread_stack_[thread_num].first  point to all allocated task

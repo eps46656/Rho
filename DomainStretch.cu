@@ -26,18 +26,13 @@ DomainStretch::DomainStretch(Space* ref, Domain* domain):
 
 bool DomainStretch::Refresh() const {
 	if (this->root() != this->domain_->root() ||
-		this->root() != this->eff_->root() || !this->domain_->Refresh() ||
+		this->root() != this->ref_->root() || !this->domain_->Refresh() ||
 		!this->ref_->RefreshSelf()) {
 		return false;
 	}
 
 	this->eff_->set_origin(this->ref_->root_origin());
-
-	Matrix axis(this->eff_->dim_s(), this->dim_r());
-	Copy<RHO__max_dim_sq>(axis, this->ref_->root_axis());
-
-	this->eff_->set_axis(axis);
-
+	this->eff_->set_axis(this->ref_->root_axis());
 	this->eff_->RefreshSelf();
 
 #///////////////////////////////////////////////////////////////////////////////

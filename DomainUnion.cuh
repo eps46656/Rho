@@ -15,8 +15,8 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda cntr::RBT<Domain*>& domain();
-	RHO__cuda const cntr::RBT<Domain*>& domain() const;
+	RHO__cuda RBT<Domain*>& domain();
+	RHO__cuda const RBT<Domain*>& domain() const;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -28,18 +28,19 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda bool Contain(const Vector& root_point) const override;
+	RHO__cuda bool Contain(const Num* root_point) const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda RayCastData RayCast(const Ray& ray) const override;
-	RHO__cuda void RayCastPair(RayCastDataPair& rcdp, const Ray& ray) const override;
-	RHO__cuda bool RayCastFull(RayCastDataVector& rcdv, const Ray& ray) const override;
+	RHO__cuda bool RayCastFull(RayCastDataVector& rcdv,
+							   const Ray& ray) const override;
 
 private:
-	cntr::RBT<Domain*> domain_;
+	RBT<Domain*> domain_;
 
-	RHO__cuda void RayCast_(RayCastTemp& rct, const Ray& ray) const;
+	RHO__cuda static void RayCast_(RayCastDataVector& dst, RayCastDataVector& a,
+								   RayCastDataVector& b);
 };
 
 }

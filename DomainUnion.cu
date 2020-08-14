@@ -1,26 +1,23 @@
 #include "define.cuh"
 #include "DomainUnion.cuh"
 
-#define RHO__throw__local(description)                                         \
-	RHO__throw(DomainUnion, __func__, description);
+#define RHO__throw__local(desc) RHO__throw(DomainUnion, __func__, desc);
 
 namespace rho {
 
-cntr::RBT<Domain*>& DomainUnion::domain() { return this->domain_; }
-const cntr::RBT<Domain*>& DomainUnion::domain() const { return this->domain_; }
+RBT<Domain*>& DomainUnion::domain() { return this->domain_; }
+const RBT<Domain*>& DomainUnion::domain() const { return this->domain_; }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-DomainUnion::DomainUnion(Space* root): DomainComplex(domain[0]->root()) {
-	RHO__debug_if(!root->is_root()) RHO__throw_local("root error");
-}
+DomainUnion::DomainUnion(Space* root): DomainComplex(root) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
 bool DomainUnion::Refresh() const {
 	auto iter(this->domain_.begin());
 
-	for (auto end(this->domain_.end()); iter != end; ++i) {
+	for (auto end(this->domain_.end()); iter != end; ++iter) {
 		if (this->root() != (*iter)->root() || !(*iter)->Refresh())
 			return false;
 	}
@@ -42,9 +39,9 @@ bool DomainUnion::Contain(const Num* root_point) const {
 
 RayCastData DomainUnion::RayCast(const Ray& ray) const {
 	RayCastDataVector rcdv;
-	this->RayCastDataFull(rcdv);
+	this->RayCastFull(rcdv, ray);
 
-	if (rcdv.size()) { return rcdv[0]; }
+	if (rcdv.size()) { return Move(rcdv[0]); }
 	return RayCastData();
 }
 
@@ -52,39 +49,49 @@ bool DomainUnion::RayCastFull(RayCastDataVector& dst, const Ray& ray) const {
 	if (this->domain_.empty()) { return false; }
 
 	if (this->domain_.size() == 1)
-		return this->domain_[0].RayCastFull(dst, ray);
+		return (*this->domain_.begin())->RayCastFull(dst, ray);
 
-	cntr::Vector<RayCastDataVector> rcdvv(this->domain_.size());
+	cntr::Vector<RayCastDataVector> rcdvv;
+	rcdvv.Reserve(this->domain_.size());
 
 	{
 		auto iter(this->domain_.begin());
-		size_t i(0);
+		size_t size(0);
 
-		for (auto end(this->domain_.end()); iter != end; ++i) {
-			bool phase((*iter)->RayCastFull(rcdvv[i]));
-			if (phase && rcdvv[i].empty()) { return true; }
+		for (auto end(this->domain_.end()); iter != end; ++iter) {
+			if (size == rcdvv.size()) { rcdvv.Push(); }
+
+			bool phase((*iter)->RayCastFull(rcdvv.back(), ray));
+
+			if (rcdvv.back().empty()) {
+				if (phase) { return true; }
+			} else {
+				++size;
+			}
 		}
+
+		rcdvv.Resize(size);
 	}
 
-	if (this->domain_.size() == 2) {
-		RayCastData__(dst, rcdvv[0], rcdvv[1]);
+	if (rcdvv.size() == 2) {
+		RayCast_(dst, rcdvv[0], rcdvv[1]);
 	} else {
 		RayCastDataVector temp;
-		RayCastData__(temp, rcdvv[0], rcdvv[1]);
+		RayCast_(temp, rcdvv[0], rcdvv[1]);
 
-		for (size_t i(2); i != this->domain_.size() - 1; ++i) {
+		for (size_t i(2); i != rcdvv.size() - 1; ++i) {
 			rcdvv[0] = Move(temp);
-			RayCastData__(temp, rcdvv[0], rcdvv[i]);
+			RayCast_(temp, rcdvv[0], rcdvv[i]);
 		}
 
-		RayCastData__(dst, temp, rcdvv.back());
+		RayCast_(dst, temp, rcdvv.back());
 	}
 
 	return false;
 }
 
-void RayCastData__(RayCastDataVector& dst, RayCastDataVector& a,
-				   RayCastDataVector& b) {
+void DomainUnion::RayCast_(RayCastDataVector& dst, RayCastDataVector& a,
+						   RayCastDataVector& b) {
 	if (a.empty()) {
 		if (b.size()) { dst = Move(b); }
 		return;
@@ -98,19 +105,19 @@ void RayCastData__(RayCastDataVector& dst, RayCastDataVector& a,
 	size_t i(0);
 	size_t j(0);
 
-	bool last_a_to(a.back()->type.to());
-	bool last_b_to(b.back()->type.to());
+	bool a_to(a.back()->phase.to());
+	bool b_to(b.back()->phase.to());
 
 	for (;;) {
 		if (a[i] < b[j]) {
-			if (!b[j]->type.fr()) { dst.Push(Move(a[i])); }
+			if (!b[j]->phase.fr()) { dst.Push(Move(a[i])); }
 			++i;
 		} else if (b[j] < a[i]) {
-			if (!a[i]->type.fr()) { dst.Push(Move(b[j])); }
+			if (!a[i]->phase.fr()) { dst.Push(Move(b[j])); }
 			++j;
 		} else {
-			a[i]->type.fr(a[i]->type.fr() || b[j]->type.fr());
-			a[i]->type.to(a[i]->type.to() || b[j]->type.to());
+			a[i]->phase.fr(a[i]->phase.fr() || b[j]->phase.fr());
+			a[i]->phase.to(a[i]->phase.to() || b[j]->phase.to());
 
 			dst.Push(Move(a[i]));
 			++i;
@@ -118,7 +125,7 @@ void RayCastData__(RayCastDataVector& dst, RayCastDataVector& a,
 		}
 
 		if (i == a.size()) {
-			if (!last_a_to) {
+			if (!a_to) {
 				for (; j != b.size(); ++j) { dst.Push(Move(b[j])); }
 			}
 
@@ -126,37 +133,13 @@ void RayCastData__(RayCastDataVector& dst, RayCastDataVector& a,
 		}
 
 		if (j == b.size()) {
-			if (!last_b_to) {
+			if (!b_to) {
 				for (; i != a.size(); ++i) { dst.Push(Move(a[j])); }
 			}
 
 			return;
 		}
 	}
-}
-
-void DomainUnion::RayCast_(RayCastTemp& rct, const Ray& ray) const {
-	for (size_t i(0); i != this->domain_.size(); ++i)
-		rct->rcdvv.Push(this->domain_[i]->RayCastFull(ray));
-
-	/*
-
-	.a..
-	++b.
-	F
-
-	*/
-	/*
-	for (size_t a(0); a != this->domain_.size(); ++a) {
-		for (size_t b(0); b != this->domain_.size(); ++b) {
-			if (a == b) { continue; }
-
-			size_t i(0);
-			size_t j(0);
-
-			for (size_t)
-		}
-	}*/
 }
 
 }

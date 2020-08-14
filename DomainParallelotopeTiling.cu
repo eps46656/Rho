@@ -93,7 +93,7 @@ Num DomainParallelotopeTiling::RayCast_(const Ray& ray) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (size_t i(this->dim_s()); i != this->dim_r(); ++i) {
+	for (dim_t i(this->dim_s()); i != this->dim_r(); ++i) {
 		if (direct[i].eq<0>()) {
 			if (origin[i].eq<0>()) { continue; }
 			return 0;

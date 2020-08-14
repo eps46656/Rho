@@ -172,7 +172,7 @@ bool DomainParallelotope::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (size_t i(this->dim_s()); i != this->dim_r(); ++i) {
+	for (dim_t i(this->dim_s()); i != this->dim_r(); ++i) {
 		if (direct[i].eq<0>()) {
 			if (origin[i].eq<0>()) { continue; }
 			return false;
@@ -185,7 +185,7 @@ bool DomainParallelotope::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (size_t i(0); i != this->dim_s(); ++i) {
+	for (dim_t i(0); i != this->dim_s(); ++i) {
 		if (direct[i].eq<0>()) {
 			if (origin[i].lt<-1>() || origin[i].gt<1>()) { return false; }
 			continue;
