@@ -6,8 +6,8 @@
 namespace rho {
 
 struct Ray {
-	NumVector origin;
-	NumVector direct;
+	Vec origin;
+	Vec direct;
 
 #///////////////////////////////////////////////////////////////////////////////
 

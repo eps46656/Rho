@@ -422,7 +422,7 @@ void Space::MapVectorFromRoot_rr(RHO__args) const {
 #define RHO__F(x, y)                                                           \
 	RHO__debug_if(this->root_ != branch->root_)                                \
 		RHO__throw__local("root error");                                       \
-	NumVector temp;                                                            \
+	Vec temp;                                                            \
 	this->MapPointToRoot_##x##r(temp, src);                                    \
 	branch->MapPointFromRoot_r##y(dst, temp);
 
@@ -444,7 +444,7 @@ void Space::MapPointToBranch_rr(RHO__args, const Space* branch) const {
 #define RHO__F(x, y)                                                           \
 	RHO__debug_if(this->root_ != branch->root_)                                \
 		RHO__throw__local("root error");                                       \
-	NumVector temp;                                                            \
+	Vec temp;                                                            \
 	this->MapVectorToRoot_##x##r(temp, src);                                   \
 	branch->MapVectorFromRoot_r##y(dst, temp);
 
@@ -470,7 +470,7 @@ void Space::MapVectorToBranch_rr(RHO__args, const Space* branch) const {
 bool Space::IncludePointFromRoot_r(const Num* src) const {
 	if (!this->dim_cr_) { return true; }
 
-	NumVector temp;
+	Vec temp;
 
 	// dot(this->dim_r_, this->dim_cr_, temp, src, this->i_root_axis_rcr_);
 
@@ -483,7 +483,7 @@ bool Space::IncludePointFromRoot_r(const Num* src) const {
 bool Space::IncludeVectorFromRoot_r(const Num* src) const {
 	if (!this->dim_cr_) { return true; }
 
-	NumVector temp;
+	Vec temp;
 
 	// dot(this->dim_r_, this->dim_cr_, temp, src, this->i_root_axis_rcr_);
 

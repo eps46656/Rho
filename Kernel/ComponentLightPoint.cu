@@ -31,7 +31,7 @@ Num3 ComponentLightPoint::intensity(
 	Ray& ray, Num pre_dist) const {
 	// from light point to hit point
 
-	NumVector direct;
+	Vec direct;
 	Vector::sub(direct, root_point, this->ref_->root_origin());
 	
 	Num face_angle_cos(angle_cos(this->dim_r(), direct, tod.orth));

@@ -6,16 +6,14 @@
 
 namespace rho {
 
-using NumVector = Num[RHO__max_dim];
-
-struct Vector_ {
+struct Vec {
 	Num data[RHO__max_dim];
 
 	RHO__cuda operator Num*() { return this->data; }
 	RHO__cuda operator const Num*() const { return this->data; }
 };
 
-class Vector: public Vector_ {
+class Vector: public Vec {
 public:
 	template<typename Dst, typename Src>
 	RHO__cuda static void Copy(Dst&& dst, Src&& src) {

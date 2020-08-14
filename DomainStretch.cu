@@ -54,7 +54,7 @@ bool DomainStretch::Refresh() const {
 #///////////////////////////////////////////////////////////////////////////////
 
 bool DomainStretch::Contain(const Num* root_point) const {
-	NumVector temp;
+	Vec temp;
 	this->ref_->MapPointFromRoot_rr(temp, root_point);
 
 	if (temp[this->eff_->dim_s()].lt<0>() ||
@@ -66,7 +66,7 @@ bool DomainStretch::Contain(const Num* root_point) const {
 		if (temp[i].ne<0>()) { return false; }
 	}
 
-	NumVector temp_;
+	Vec temp_;
 	this->eff_->MapPointToRoot_sr(temp_, temp);
 
 	return this->domain_->Contain(temp_);
@@ -98,7 +98,7 @@ bool DomainStretch::RayCastFull(RayCastDataVector& dst, const Ray& ray) const {
 		}
 
 		case RHO__co: {
-			NumVector point;
+			Vec point;
 			rct.proj_eff_ray.point(point, rct.t[0]);
 
 			if (this->domain_->Contain(point)) {
@@ -262,7 +262,7 @@ void DomainStretch::GetTodTan(Num* dst, const RayCastData& rcd,
 	RayCastData& a(rcd.Get<RayCastDataCore_*>()->rcd);
 
 	if (a) {
-		NumVector temp;
+		Vec temp;
 		a->domain->GetTodTan(temp, a, root_direct);
 		dot(this->ref_->dim_r(), this->ref_->dim_r(), dst, temp,
 			this->ref_todm_);

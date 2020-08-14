@@ -5,16 +5,14 @@
 
 namespace rho {
 
-using NumMatrix = Num[RHO__max_dim_sq];
-
-struct Matrix_ {
+struct Mat {
 	Num data[RHO__max_dim_sq];
 
 	RHO__cuda operator Num*() { return this->data; }
 	RHO__cuda operator const Num*() const { return this->data; }
 };
 
-class Matrix: public Matrix_ {
+class Matrix: public Mat {
 public:
 	template<typename Dst, typename Src>
 	RHO__cuda static void Copy(Dst&& dst, Src&& src) {

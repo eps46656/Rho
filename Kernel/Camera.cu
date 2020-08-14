@@ -204,7 +204,7 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 	Camera::Task* task;
 	Camera::Task* next_task;
 
-	NumVector temp;
+	Vec temp;
 
 #///////////////////////////////////////////////////////////////////////////////
 

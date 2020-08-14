@@ -211,8 +211,8 @@ void DomainBall::GetTodTan(Num* dst, const RayCastData& rcd,
 
 	Num* point(rcd.Get<RayCastDataCore_*>()->point);
 
-	NumMatrix m;
-	NumMatrix temp;
+	Mat m;
+	Mat temp;
 
 	if (sq(this->dim_s(), point).ne<1>()) {
 		Matrix::identity(temp, this->dim_r());

@@ -9,12 +9,12 @@ class DomainBall: public DomainSole {
 public:
 	struct RayCastTemp {
 		Num t[2];
-		NumVector origin;
-		NumVector direct;
+		Vec origin;
+		Vec direct;
 	};
 
 	struct RayCastDataCore_: public RayCastDataCore {
-		NumVector point;
+		Vec point;
 	};
 
 #///////////////////////////////////////////////////////////////////////////////

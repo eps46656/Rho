@@ -9,8 +9,8 @@ class DomainStretch :public DomainComplex {
 public:
 	struct RayCastTemp {
 		Num t[2];
-		NumVector ref_origin;
-		NumVector ref_direct;
+		Vec ref_origin;
+		Vec ref_direct;
 		Ray proj_eff_ray;
 	};
 
@@ -62,8 +62,8 @@ private:
 	Space* eff_;
 	Domain* domain_;
 
-	mutable NumMatrix eff_todm_;
-	mutable NumMatrix ref_todm_;
+	mutable Mat eff_todm_;
+	mutable Mat ref_todm_;
 
 	RHO__cuda int RayCast_(const Ray& ray, RayCastTemp& rct)const;
 };

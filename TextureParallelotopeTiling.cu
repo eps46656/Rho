@@ -71,7 +71,7 @@ Texture::Data TextureParallelotopeTiling::GetData(
 	const Num* root_point,
 	const Num* tod_tan)const {
 
-	NumVector point;
+	Vec point;
 
 	this->ref_->MapPointFromRoot_rs(point, root_point);
 

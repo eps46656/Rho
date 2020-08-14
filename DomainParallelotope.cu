@@ -164,8 +164,8 @@ bool DomainParallelotope::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 	rct.t[1] = RHO__inf;
 	rct.contain_flag[0] = rct.contain_flag[1] = 0;
 
-	NumVector origin;
-	NumVector direct;
+	Vec origin;
+	Vec direct;
 
 	this->ref()->MapPointFromRoot_rr(origin, ray.origin);
 	this->ref()->MapVectorFromRoot_rr(direct, ray.direct);

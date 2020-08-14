@@ -232,22 +232,22 @@ private:
 
 #////////////////////////////////////////////////
 
-	mutable NumVector origin_;
-	mutable NumMatrix axis_;
+	mutable Vec origin_;
+	mutable Mat axis_;
 
-	mutable NumVector root_origin_;
-	mutable NumMatrix root_axis_;
+	mutable Vec root_origin_;
+	mutable Mat root_axis_;
 
-	mutable NumVector i_origin_;
-	mutable NumMatrix i_axis_;
+	mutable Vec i_origin_;
+	mutable Mat i_axis_;
 
-	mutable NumVector i_root_origin_;
-	mutable NumMatrix i_root_axis_;
+	mutable Vec i_root_origin_;
+	mutable Mat i_root_axis_;
 
 #////////////////////////////////////////////////
 
-	mutable Matrix proj_root_axis_rs_;
-	mutable Matrix proj_root_axis_rr_;
+	mutable Mat proj_root_axis_rs_;
+	mutable Mat proj_root_axis_rr_;
 
 #////////////////////////////////////////////////
 

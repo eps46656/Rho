@@ -7,14 +7,14 @@ namespace rho {
 
 void Tod::TanMatrix(dim_t dim_s, dim_t dim_r, Num* dst, const Num* src) {
 	if (dim_s) {
-		NumMatrix temp;
+		Mat temp;
 
 		Copy<RHO__max_dim_sq>(temp, src);
 
 		if (!Complement(dim_s, dim_r, temp))
 			RHO__throw__local("linear dependence error");
 
-		NumMatrix temp_i;
+		Mat temp_i;
 		inverse(dim_r, temp_i, temp);
 		dot(dim_r, dim_s, dim_r, dst, temp_i, temp);
 	} else {
@@ -24,14 +24,14 @@ void Tod::TanMatrix(dim_t dim_s, dim_t dim_r, Num* dst, const Num* src) {
 
 void Tod::OrthMatrix(dim_t dim_s, dim_t dim_r, Num* dst, const Num* src) {
 	if (dim_s) {
-		NumMatrix temp;
+		Mat temp;
 
 		Copy<RHO__max_dim_sq>(temp, src);
 
 		if (!Complement(dim_s, dim_r, temp))
 			RHO__throw__local("linear dependence error");
 
-		NumMatrix temp_i;
+		Mat temp_i;
 		inverse(dim_r, temp_i, temp);
 		dot(dim_r, dim_r - dim_s, dim_r, dst, temp_i + dim_s,
 			temp + RHO__max_dim * dim_s);

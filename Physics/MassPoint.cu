@@ -61,8 +61,8 @@ void Collide(
 			y_mass, y_vel_dot_orth / orth_l,
 			e);
 
-	NumVector x_orth_vel_;
-	NumVector y_orth_vel_;
+	Vec x_orth_vel_;
+	Vec y_orth_vel_;
 
 #pragma unroll
 	for (size_t i(0); i != RHO__max_dim; ++i) {

@@ -85,8 +85,8 @@ void DomainParallelotopeTiling::RayCastForRender(
 }
 
 Num DomainParallelotopeTiling::RayCast_(const Ray& ray) const {
-	NumVector origin;
-	NumVector direct;
+	Vec origin;
+	Vec direct;
 
 	this->ref()->MapPointFromRoot_rr(origin, ray.origin);
 	this->ref()->MapVectorFromRoot_rr(direct, ray.direct);
