@@ -261,8 +261,7 @@ bool DomainDifference::RayCastFull(RayCastDataVector& dst,
 
 void DomainDifference::GetTodTan(Num* dst, const RayCastData& rcd,
 								 const Num* root_direct) const {
-	::printf("error\n");
-	assert(false);
+	RHO__throw__local("call error");
 }
 
 #///////////////////////////////////////////////////////////////////////////////

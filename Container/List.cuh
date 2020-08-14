@@ -80,7 +80,7 @@ public:
 	RHO__cuda List(const List<T>& list): size_(list.size_), end_(&this->node_) {
 		for (Node* i(list.node_->next); i != list.node_;
 			 i = static_cast<Node*>(i->next)) {
-			this->node_->PushFront(new Node(i->value));
+			this->node_->PushPrev(new Node(i->value));
 		}
 	}
 
@@ -108,15 +108,17 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-#define RHO__F(x) static_cast<Node*>(this->node_->##x##)
+	RHO__cuda T& front() {
+		return static_cast<Node*>(this->node_->next)->value;
+	}
+	RHO__cuda const T& front() const {
+		return static_cast<Node*>(this->node_->next)->value;
+	}
 
-	RHO__cuda T& front() { return RHO__F(next)->value; }
-	RHO__cuda const T& front() const { RHO__F(next)->value; }
-
-	RHO__cuda T& back() { return RHO__F(prev)->value; }
-	RHO__cuda const T& back() const { return RHO__F(prev)->value; }
-
-#undef RHO__F
+	RHO__cuda T& back() { return static_cast<Node*>(this->end_->prev)->value; }
+	RHO__cuda const T& back() const {
+		return static_cast<Node*>(this->end_->prev)->value;
+	}
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -124,7 +126,7 @@ public:
 		++this->size_;
 
 		if (this->end_ == &this->node_) {
-			this->node_.PushBack(new Node(Forward<Args>(args)...));
+			this->node_.PushNext(new Node(Forward<Args>(args)...));
 			return;
 		}
 
@@ -139,7 +141,7 @@ public:
 		++this->size_;
 
 		if (this->end_ == &this->node_) {
-			this->node_.PushFront(new Node(Forward<Args>(args)...));
+			this->node_.PushPrev(new Node(Forward<Args>(args)...));
 			return;
 		}
 

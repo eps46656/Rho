@@ -4,8 +4,6 @@
 #include "../Base/memory.cuh"
 #include "../define.cuh"
 
-#define RHO__throw__local(desc) RHO__throw(BidirectionalNode, __func__, desc);
-
 namespace rho {
 namespace cntr {
 
@@ -19,163 +17,130 @@ struct BidirectionalNode {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda BidirectionalNode();
-	RHO__cuda virtual ~BidirectionalNode();
+	RHO__cuda BidirectionalNode(): prev(this), next(this) {}
+	RHO__cuda virtual ~BidirectionalNode() { this->Pop(); }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda static void Link(Self* x, Self* y);
+	RHO__cuda static void Link(Self* x, Self* y) { (y->prev = x)->next = y; }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda void PushFront(Self* node);
-	RHO__cuda void PushFront(Self* begin, Self* end);
+	RHO__cuda void PushPrev(Self* node) {
+		if (this == node || this == node->next) { return; }
+		if (node != node->prev) { Link(node->prev, node->next); }
 
-	RHO__cuda void PushBack(Self* node);
-	RHO__cuda void PushBack(Self* begin, Self* end);
+		Link(this->prev, node);
+		Link(node, this);
+	}
 
-	RHO__cuda Self* Pop();
-	RHO__cuda static void Pop(Self* begin, Self* end);
+	RHO__cuda void PushPrev(Self* begin, Self* end) {
+		if (begin->prev != end) { Link(begin->prev, end); }
 
-	RHO__cuda void Replace(Self* node);
+		Self* begin_(begin->prev);
+		Self* end_(end->prev);
 
-	RHO__cuda void Reverse();
-	RHO__cuda void ReverseAll();
+		Link(this->prev, begin);
+		Link(end_, this);
 
-	RHO__cuda static void Swap(Self& x, Self& y);
-};
+		if (begin_ != end) { Link(begin_, end); }
+	}
 
-#///////////////////////////////////////////////////////////////////////////////
-#///////////////////////////////////////////////////////////////////////////////
-#///////////////////////////////////////////////////////////////////////////////
+	RHO__cuda void PushNext(Self* node) {
+		if (this == node || this == node->prev) { return; }
+		if (node != node->prev) { Link(node->prev, node->next); }
 
-inline BidirectionalNode::BidirectionalNode(): prev(this), next(this) {}
-inline BidirectionalNode::~BidirectionalNode() { this->Pop(); }
+		Link(node, this->next);
+		Link(this, node);
+	}
 
-#///////////////////////////////////////////////////////////////////////////////
+	RHO__cuda void PushNext(Self* begin, Self* end) {
+		Self* begin_(begin->prev);
+		Self* end_(end->prev);
 
-inline void BidirectionalNode::Link(Self* x, Self* y) {
-	(y->prev = x)->next = y;
-}
+		Link(end_, this->next);
+		Link(this, begin);
 
-inline void BidirectionalNode::PushFront(Self* node) {
-	if (node != node->prev) { Link(node->prev, node->next); }
+		if (begin_ != end) { Link(begin_, end); }
+	}
 
-	Link(this->prev, node);
-	Link(node, this);
-}
+	RHO__cuda Self* Pop() {
+		if (this != this->prev) {
+			Link(this->prev, this->next);
+			this->prev = this->next = this;
+		}
 
-inline void BidirectionalNode::PushFront(Self* begin, Self* end) {
-	RHO__debug_if(!begin || !end) RHO__throw__local("nullptr error");
+		return this;
+	}
 
-	if (begin->prev != end) { Link(begin->prev, end); }
+	RHO__cuda static void Pop(Self* begin, Self* end) {
+		Self* begin_(begin->prev);
+		Self* end_(end->prev);
 
-	Self* begin_(begin->prev);
-	Self* end_(end->prev);
+		if (begin != end) {
+			Link(begin_, end);
+			Link(begin, end_);
+		}
+	}
 
-	Link(this->prev, begin);
-	Link(end_, this);
+	RHO__cuda void Replace(Self* node) {
+		if (this == node) { return; }
 
-	if (begin_ != end) { Link(begin_, end); }
-}
+		if (node != node->prev) { Link(node->prev, node->next); }
 
-inline void BidirectionalNode::PushBack(Self* node) {
-	if (node != node->prev) { Link(node->prev, node->next); }
+		Link(this->prev, node);
+		Link(node, this->next);
 
-	Link(node, this->next);
-	Link(this, node);
-}
-
-inline void BidirectionalNode::PushBack(Self* begin, Self* end) {
-	RHO__debug_if(!begin || !end) { RHO__throw__local("nullptr error"); }
-
-	Self* begin_(begin->prev);
-	Self* end_(end->prev);
-
-	Link(end_, this->next);
-	Link(this, begin);
-
-	if (begin_ != end) { Link(begin_, end); }
-}
-
-inline BidirectionalNode* BidirectionalNode::Pop() {
-	if (this != this->prev) {
-		Link(this->prev, this->next);
 		this->prev = this->next = this;
 	}
 
-	return this;
-}
+	RHO__cuda void Reverse() {
+		Self* prev_(this->prev);
+		Self* next_(this->next);
 
-inline void BidirectionalNode::Pop(Self* begin, Self* end) {
-	Self* begin_(begin->prev);
-	Self* end_(end->prev);
-
-	if (begin != end) {
-		Link(begin_, end);
-		Link(begin, end_);
+		Link(next_, this);
+		Link(this, prev_);
 	}
-}
 
-inline void BidirectionalNode::Replace(Self* node) {
-	if (this == node) { return; }
+	RHO__cuda void ReverseAll() {
+		rho::Swap(*this->prev, *this->next);
 
-	if (node != node->prev) { Link(node->prev, node->next); }
-
-	Link(this->prev, node);
-	Link(node, this->next);
-
-	this->prev = this->next = this;
-}
-
-inline void BidirectionalNode::Reverse() {
-	Self* prev_(this->prev);
-	Self* next_(this->next);
-
-	Link(next_, this);
-	Link(this, prev_);
-}
-
-inline void BidirectionalNode::ReverseAll() {
-	Swap(*this->prev, *this->next);
-
-	for (Self* i(this->next); i != this; i = i->next) {
-		Swap(*i->prev, *i->next);
+		for (Self* i(this->next); i != this; i = i->next) {
+			rho::Swap(*i->prev, *i->next);
+		}
 	}
-}
 
-inline void BidirectionalNode::Swap(Self& x, Self& y) {
-	if (&x == &y) { return; }
+	RHO__cuda static void Swap(Self& x, Self& y) {
+		if (&x == &y) { return; }
 
-	Self* x_prev(x.prev);
-	Self* x_next(x.next);
+		Self* x_prev(x.prev);
+		Self* x_next(x.next);
 
-	if (x_prev == &y) {
-		Self* y_prev(y.prev);
+		if (x_prev == &y) {
+			Self* y_prev(y.prev);
 
-		Link(y_prev, &x);
-		Link(&x, &y);
-		Link(&y, x_next);
-	} else if (x_next == &y) {
-		Self* y_next(y.next);
+			Link(y_prev, &x);
+			Link(&x, &y);
+			Link(&y, x_next);
+		} else if (x_next == &y) {
+			Self* y_next(y.next);
 
-		Link(x_prev, &y);
-		Link(&y, &x);
-		Link(&x, y_next);
-	} else {
-		Self* y_prev(y.prev);
-		Self* y_next(y.next);
+			Link(x_prev, &y);
+			Link(&y, &x);
+			Link(&x, y_next);
+		} else {
+			Self* y_prev(y.prev);
+			Self* y_next(y.next);
 
-		Link(x_prev, &y);
-		Link(&y, x_next);
-		Link(y_prev, &x);
-		Link(&x, y_next);
+			Link(x_prev, &y);
+			Link(&y, x_next);
+			Link(y_prev, &x);
+			Link(&x, y_next);
+		}
 	}
-}
+};
 
 }
 }
-
-#undef RHO__throw__local
 
 #endif

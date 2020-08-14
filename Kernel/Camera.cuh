@@ -1,8 +1,9 @@
 #ifndef RHO__define_guard__Kernel__Camera_cuh
 #define RHO__define_guard__Kernel__Camera_cuh
 
-#include "Manager.cuh"
 #include "init.cuh"
+#include "Manager.cuh"
+#include "Ray.cuh"
 
 namespace rho {
 
@@ -26,8 +27,7 @@ public:
 	};
 
 	struct Task: public cntr::BidirectionalNode {
-		NumVector origin;
-		NumVector direct;
+		Ray ray;
 		Num dist;
 		size_t depth;
 		Num3 decay;

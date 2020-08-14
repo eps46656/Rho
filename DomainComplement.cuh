@@ -32,6 +32,15 @@ public:
 									ComponentCollider* cmpt_collider,
 									const Ray& ray) const override;
 
+#///////////////////////////////////////////////////////////////////////////////
+
+	RHO__cuda void GetTodTan(Num* dst, const RayCastData& rcd,
+							 const Num* root_direct) const override;
+
+#///////////////////////////////////////////////////////////////////////////////
+
+	RHO__cuda size_t Complexity() const override;
+
 private:
 	Domain* domain_;
 };

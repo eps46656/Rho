@@ -69,6 +69,18 @@ void DomainComplement::RayCastForRender(pair<RayCastData>& rcdp,
 }
 
 #///////////////////////////////////////////////////////////////////////////////
+
+void DomainComplement::GetTodTan(Num* dst, const RayCastData& rcd,
+								 const Num* root_direct) const {
+	RHO__throw__local("call error");
+}
+
+#///////////////////////////////////////////////////////////////////////////////
+
+size_t DomainComplement::Complexity() const {
+	return this->domain_->Complexity();
+}
+
 /*
 bool DomainComplement::IsTanVector(
 	const Vector& root_point, const Vector& root_vector)const {

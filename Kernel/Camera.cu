@@ -1,7 +1,7 @@
 #include "define.cuh"
 #include "Kernel.cuh"
 
-#define RHO__throw__local(description) RHO__throw(Camera, __func__, description)
+#define RHO__throw__local(desc) RHO__throw(Camera, __func__, desc)
 
 #define RHO__task_stack_second (task_stack.second + task_stack.first)
 
@@ -55,29 +55,13 @@ Camera::~Camera() {}
 #///////////////////////////////////////////////////////////////////////////////
 
 void Camera::RenderReady(size_t size) const {
-	// printf("render ready begin\n");
-
 	Camera_Render_pre_<<<1, 1>>>(this, size);
-
-	// printf("render ready end\n");
 }
 
 void Camera::Render(size_t block_pos_h, size_t block_pos_w, size_t block_size_h,
 					size_t block_size_w) const {
-	/*printf("render begin\n");
-
-	Camera_Render_main_ << <
-		dim3(1, 1, 480),
-		dim3(1, 1, 270) >> > (this);
-
-	cudaDeviceSynchronize();
-
-	printf("render end\n");*/
-
-	/*Camera_Render_ << <1, 1 >> > (this);*/
-
-	Camera_Render_main_<<<3, 1024>>>(this, block_pos_h, block_pos_w,
-									 block_size_h, block_size_w);
+	Camera_Render_main_<<<32, 1024>>>(this, block_pos_h, block_pos_w,
+									  block_size_h, block_size_w);
 }
 
 RHO__glb void Camera_Render_(const Camera* camera) {
@@ -184,12 +168,6 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 	size_t render_index(thread_id);
 	Camera::RenderData* render_data;
 
-	Ray ray;
-
-	Num dist;
-	size_t depth;
-	Num3 decay;
-
 	Num dist_sq;
 	Num d_dist;
 
@@ -212,34 +190,38 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 
 	Vector reflection_vector;
 
-	pair<size_t, Camera::Task*> task_stack{ 0, Malloc<Camera::Task>(
-												   camera->max_depth_) };
+	size_t task_size(0);
+	cntr::BidirectionalNode task_node;
+
+#define RHO__static_task_size 5
+
+	Camera::Task static_task[RHO__static_task_size];
+	// this task is to avoid using New<Camera::Task>()
+
+	for (size_t i(0); i != RHO__static_task_size; ++i)
+		task_node.PushNext(static_task + i);
+
+	Camera::Task* task;
+	Camera::Task* next_task;
 
 	NumVector temp;
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (;;) {
-		if (task_stack.first) {
+	for (;; --task_size) {
+		if (task_size) {
 			// the current have not been done
 			// we pop the task from pre-tracing
-
-			--task_stack.first;
-
-			Vector::Copy(ray.origin, RHO__task_stack_second->origin);
-			Vector::Copy(ray.direct, RHO__task_stack_second->direct);
-
-			dist = RHO__task_stack_second->dist;
-			depth = RHO__task_stack_second->depth;
-
-			decay = RHO__task_stack_second->decay;
-
+			task = static_cast<Camera::Task*>(task->prev);
 		} else {
 			// if then current pixel have been done
 			// task_stack will be vacant
 			// then we can process the next
 
 			if (block_size <= render_index) { return; }
+
+			++task_size;
+			task = static_cast<Camera::Task*>(task_node.next);
 
 			render_data = camera->render_data_.second + render_index;
 			render_data->dist = 0;
@@ -250,21 +232,24 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 			size_t i(render_index / block_size_w);
 			size_t j(render_index - i * block_size_w);
 
-			Vector::Copy(ray.origin, camera->ref_->root_origin());
+			Vector::Copy(task->ray.origin, camera->ref_->root_origin());
+
+			i += block_pos_h;
+			j += block_pos_w;
 
 #pragma unroll
 			for (dim_t k(0); k != RHO__max_dim; ++k) {
-				ray.direct[k] = camera->direct_f_[k] +
-								camera->direct_h_[k] * (block_pos_h + i) +
-								camera->direct_w_[k] * (block_pos_w + j);
+				task->ray.direct[k] = camera->direct_f_[k] +
+									  camera->direct_h_[k] * i +
+									  camera->direct_w_[k] * j;
 			}
 
-			dist = 0;
-			depth = 0;
+			task->dist = 0;
+			task->depth = 0;
 
-			decay[0] = 1;
-			decay[1] = 1;
-			decay[2] = 1;
+			task->decay[0] = 1;
+			task->decay[1] = 1;
+			task->decay[2] = 1;
 
 			render_index += thread_num;
 		}
@@ -276,26 +261,23 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 		// every point between the first and second hit points is
 		// in the material b
 
-		ray.RayCastForRender(rcdp, camera->cmpt_collider_);
+		task->ray.RayCastForRender(rcdp, camera->cmpt_collider_);
 
 		if (!rcdp[0]) {
 			/*goto function_head; */
 			continue;
 		}
 
-		line<RHO__max_dim>(point[0], rcdp[0]->t, ray.direct, ray.origin);
+		task->ray.point(point[0], rcdp[0]->t);
 
-		if (rcdp[1])
-			line<RHO__max_dim>(point[1], rcdp[1]->t, ray.direct, ray.origin);
+		if (rcdp[1]) { task->ray.point(point[1], rcdp[1]->t); }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-			// 在另一面計算在材質a中的路徑長
-			// 計算在材質a中的穿透率
+		// calculate the dist fromt origin to point[0]
+		// to get the transmittance through material a
 
-#pragma unroll
-		for (dim_t i(0); i != RHO__max_dim; ++i)
-			temp[i] = (ray.origin[i] + point[0][i]) / 2;
+		task->ray.point(temp, rcdp[0]->t / 2);
 
 		material_a = (collider_a = camera->manager_->GetComponentCollider(temp))
 						 ? collider_a->object()->material()
@@ -311,25 +293,25 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 
 		// object's material are initialized to default material
 
-		d_dist = abs(camera->dim_r(), ray.direct) * rcdp[0]->t;
+		d_dist = abs(camera->dim_r(), task->ray.direct) * rcdp[0]->t;
 
 		if (render_data->dist.eq<0>()) { render_data->dist = d_dist; }
 
-		dist_sq = sq(dist += d_dist);
+		dist_sq = sq(task->dist += d_dist);
 
-		decay[0] *= pow(material_a->transmittance[0], d_dist);
-		decay[1] *= pow(material_a->transmittance[1], d_dist);
-		decay[2] *= pow(material_a->transmittance[2], d_dist);
+		task->decay[0] *= pow(material_a->transmittance[0], d_dist);
+		task->decay[1] *= pow(material_a->transmittance[1], d_dist);
+		task->decay[2] *= pow(material_a->transmittance[2], d_dist);
 
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 
-		rcdp[0]->domain->GetTodTan(tod.tan, rcdp[0], ray.direct);
+		rcdp[0]->domain->GetTodTan(tod.tan, rcdp[0], task->ray.direct);
 
 #pragma unroll
 		for (dim_t i(0); i != RHO__max_dim; ++i)
-			tod.orth[i] = ray.direct[i] - tod.tan[i];
+			tod.orth[i] = task->ray.direct[i] - tod.tan[i];
 
 		texture_data =
 			rcdp[0]->cmpt_collider->texture()->GetData(point[0], tod.tan);
@@ -345,18 +327,8 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 
 		if (transmittance[0].ne<0>() || transmittance[1].ne<0>() ||
 			transmittance[2].ne<0>()) {
-			/*collider_b = camera->manager_->GetComponentCollider(
-				rcdp[1] ? (point[0] + point[1]) / 2 : point[0] + ray.direct);*/
-
-			if (rcdp[1]) {
-#pragma unroll
-				for (dim_t i(0); i != RHO__max_dim; ++i)
-					temp[i] = (point[0][i] + point[1][i]) / 2;
-			} else {
-#pragma unroll
-				for (dim_t i(0); i != RHO__max_dim; ++i)
-					temp[i] = point[0][i] + ray.direct[i];
-			}
+			task->ray.point(temp, rcdp[1] ? ((rcdp[0]->t + rcdp[1]->t) / 2)
+										  : (rcdp[0]->t + 1));
 
 			material_b =
 				(collider_b = camera->manager_->GetComponentCollider(temp))
@@ -388,25 +360,33 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 					transmittance[1] *= refraction.transmittance;
 					transmittance[2] *= refraction.transmittance;
 
-					next_decay[0] = decay[0] * transmittance[0];
-					next_decay[1] = decay[1] * transmittance[1];
-					next_decay[2] = decay[2] * transmittance[2];
+					next_decay[0] = task->decay[0] * transmittance[0];
+					next_decay[1] = task->decay[1] * transmittance[1];
+					next_decay[2] = task->decay[2] * transmittance[2];
 
 					// after (long long) judge
 					// we push a task to task_stack
 
 					// printf("reflection task add\n");
 
-					if (task_stack.first < camera->max_depth_) {
-						Vector::Copy(RHO__task_stack_second->origin, point[0]);
-						line<RHO__max_dim>(RHO__task_stack_second->direct,
+					if (task->depth < camera->max_depth_) {
+						if (task->next == &task_node) {
+							task->PushPrev(next_task = New<Camera::Task>());
+						} else {
+							cntr::BidirectionalNode::Swap(
+								*task, *(next_task = static_cast<Camera::Task*>(
+											 task->next)));
+						}
+
+						Vector::Copy(next_task->ray.origin, point[0]);
+						line<RHO__max_dim>(next_task->ray.direct,
 										   refraction.parallel_ratio, tod.tan,
 										   tod.orth);
-						RHO__task_stack_second->dist = dist;
-						RHO__task_stack_second->depth = depth + 1;
-						RHO__task_stack_second->decay = Move(next_decay);
+						next_task->dist = task->dist;
+						next_task->depth = task->depth + 1;
+						next_task->decay = Move(next_decay);
 
-						++task_stack.first;
+						++task_size;
 					}
 				}
 			}
@@ -421,30 +401,29 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 		if (reflectance[0].ne<0>() || reflectance[1].ne<0>() ||
 			reflectance[2].ne<0>()) {
 			Num3 next_decay;
-			next_decay[0] = decay[0] * reflectance[0];
-			next_decay[1] = decay[1] * reflectance[1];
-			next_decay[2] = decay[2] * reflectance[2];
+			next_decay[0] = task->decay[0] * reflectance[0];
+			next_decay[1] = task->decay[1] * reflectance[1];
+			next_decay[2] = task->decay[2] * reflectance[2];
 
-			/*
-			camera->min_recv_intensity_[0] < camera->intensity_sum_[0]
-				* next_intensity_decay[0] / dist_sq ||
-				camera->min_recv_intensity_[1] < camera->intensity_sum_[1]
-				* next_intensity_decay[1] / dist_sq ||
-				camera->min_recv_intensity_[2] < camera->intensity_sum_[2]
-				* next_intensity_decay[2] / dist_sq
-			*/
-
-			if (task_stack.first < camera->max_depth_) {
+			if (task->depth < camera->max_depth_) {
 				// after (long long) judge
 				// we push a task to task_stack
 
-				Vector::Copy(RHO__task_stack_second->origin, point[0]);
-				Vector::Copy(RHO__task_stack_second->direct, reflection_vector);
-				RHO__task_stack_second->dist = dist;
-				RHO__task_stack_second->depth = depth + 1;
-				RHO__task_stack_second->decay = Move(next_decay);
+				if (task->next == &task_node) {
+					task->PushPrev(next_task = New<Camera::Task>());
+				} else {
+					cntr::BidirectionalNode::Swap(
+						*task,
+						*(next_task = static_cast<Camera::Task*>(task->next)));
+				}
 
-				++task_stack.first;
+				Vector::Copy(next_task->ray.origin, point[0]);
+				Vector::Copy(next_task->ray.direct, reflection_vector);
+				next_task->dist = task->dist;
+				next_task->depth = task->depth + 1;
+				next_task->decay = Move(next_decay);
+
+				++task_size;
 			}
 		}
 
@@ -486,21 +465,29 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 
 			Num3 intensity(camera->cmpt_light_[i]->intensity(
 				point[0], tod, camera->cmpt_collider_, reflection_vector,
-				texture_data, ray, dist));
+				texture_data, task->ray, task->dist));
 
 			render_data->intensity[0] += texture_data.color[0] / 255 *
 										 intensity[0] * difuss_reflectance[0] *
-										 decay[0];
+										 task->decay[0];
 			render_data->intensity[1] += texture_data.color[1] / 255 *
 										 intensity[1] * difuss_reflectance[1] *
-										 decay[1];
+										 task->decay[1];
 			render_data->intensity[2] += texture_data.color[2] / 255 *
 										 intensity[2] * difuss_reflectance[2] *
-										 decay[2];
+										 task->decay[2];
 		}
 	}
 
-	// goto function_head;
+	Camera::Task* n(static_cast<Camera::Task*>(task_node.next));
+	Camera::Task* m;
+
+	while (n != &task_node) {
+		m = static_cast<Camera::Task*>(n->next);
+		int k(n - static_task);
+		if (!(0 < k && k < RHO__static_task_size)) { Delete(n); }
+		n = m;
+	}
 }
 
 void Camera::RenderDataRefresh_(RenderData* render_data) const {

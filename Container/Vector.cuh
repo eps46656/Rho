@@ -3,7 +3,7 @@
 
 #include "../Base/memory.cuh"
 
-#define RHO__throw_local(desc) RHO__throw(cntr::Vector<T>, __func__, desc)
+#define RHO__throw__local(desc) RHO__throw(cntr::Vector<T>, __func__, desc)
 
 namespace rho {
 namespace cntr {
@@ -104,7 +104,7 @@ public:
 
 		Destroy(this->size_, this->data_);
 		this->size_ = vector.size_;
-		vector.size_ = 0;		
+		vector.size_ = 0;
 		rho::Swap(this->capacity_, vector.capacity_);
 		rho::Swap(this->data_, vector.data_);
 
@@ -144,19 +144,19 @@ public:
 	}
 
 	RHO__cuda T& at(size_t index) {
-		RHO__debug_if(this->size_ <= index) RHO__throw_local("index error");
+		RHO__debug_if(this->size_ <= index) RHO__throw__local("index error");
 		return this->data_[index];
 	}
 
 	RHO__cuda const T& at(size_t index) const {
-		RHO__debug_if(this->size_ <= index) RHO__throw_local("index error");
+		RHO__debug_if(this->size_ <= index) RHO__throw__local("index error");
 		return this->data_[index];
 	}
 
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda T& front() {
-		RHO__debug_if(!this->size_) RHO__throw_local("index error");
+		RHO__debug_if(!this->size_) RHO__throw__local("index error");
 
 		return *this->data_;
 	}
@@ -164,7 +164,7 @@ public:
 	RHO__cuda const T& front() const { return this->front(); }
 
 	RHO__cuda T& back() {
-		RHO__debug_if(!this->size_) RHO__throw_local("index error");
+		RHO__debug_if(!this->size_) RHO__throw__local("index error");
 
 		return this->data_[this->size_ - 1];
 	}
@@ -185,7 +185,7 @@ public:
 
 	template<typename... Args>
 	RHO__cuda Iterator Insert(Iterator index, Args&&... args) {
-		RHO__debug_if(!this->valid_(index)) RHO__throw_local("index error");
+		RHO__debug_if(!this->valid_(index)) RHO__throw__local("index error");
 
 		if (this->size_ == this->capacity_) {
 			if (this->capacity_) this->capacity_ <<= 1;
@@ -280,7 +280,7 @@ public:
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda void Pop() {
-		RHO__debug_if(!this->size_) RHO__throw_local("index error");
+		RHO__debug_if(!this->size_) RHO__throw__local("index error");
 
 		--this->size_;
 		this->data_[this->size_].~T();
@@ -306,7 +306,7 @@ public:
 	}
 
 	RHO__cuda T* Erase(T* index) {
-		RHO__debug_if(!this->valid_(index)) RHO__throw_local("index error");
+		RHO__debug_if(!this->valid_(index)) RHO__throw__local("index error");
 
 		T* end(this->data_ + (this->size_ -= 1));
 
@@ -319,7 +319,7 @@ public:
 
 	RHO__cuda T* Erase(T* begin, T* end) {
 		RHO__debug_if(!this->valid_(begin, end))
-			RHO__throw_local("index error");
+			RHO__throw__local("index error");
 
 		if (begin == end) { return begin; }
 
@@ -338,7 +338,7 @@ public:
 
 	RHO__cuda T* Replace(T* data, size_t capacity) {
 		RHO__debug_if(capacity < this->size_)
-			RHO__throw_local("capacity error");
+			RHO__throw__local("capacity error");
 
 		for (size_t i(0); i != this->size_; ++i) {
 			new (data + i) T(Move(this->data_[i]));
@@ -436,6 +436,6 @@ protected:
 }
 }
 
-#undef RHO__throw_local
+#undef RHO__throw__local
 
 #endif
