@@ -3,8 +3,7 @@
 
 #include "BidirectionalNode.cuh"
 
-#define RHO__throw__local(desc)                                                \
-	RHO__throw(cntr::List<T, Compare>, __func__, desc);
+#define RHO__throw__local(desc) RHO__throw(cntr::List, __func__, desc)
 
 #define RHO__Node(x) static_cast<Node*>(x)
 
@@ -64,55 +63,60 @@ public:
 	RHO__cuda size_t size() const { return this->size_; }
 	RHO__cuda bool empty() const { return !this->size_; }
 
-	RHO__cuda Iterator begin() { return this->node_->next; }
-	RHO__cuda Iterator end() { return this->end_; }
+	RHO__cuda Iterator begin() { return static_cast<Node*>(this->node_.next); }
+	RHO__cuda Iterator end() { return static_cast<Node*>(this->end_); }
 
-	RHO__cuda ConstIterator begin() const { return this->node_->next; }
-	RHO__cuda ConstIterator end() const { return this->end_; }
+	RHO__cuda ConstIterator begin() const {
+		return static_cast<Node*>(this->node_.next);
+	}
+	RHO__cuda ConstIterator end() const {
+		return static_cast<Node*>(this->end_);
+	}
 
-	RHO__cuda ConstIterator const_begin() { return this->node_->next; }
-	RHO__cuda ConstIterator const_end() { return this->end_; }
+	RHO__cuda ConstIterator const_begin() {
+		return static_cast<Node*>(this->node_.next);
+	}
+	RHO__cuda ConstIterator const_end() {
+		return static_cast<Node*>(this->end_);
+	}
 
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda List(): size_(0), end_(&this->node_) {}
 
 	RHO__cuda List(const List<T>& list): size_(list.size_), end_(&this->node_) {
-		for (Node* i(list.node_->next); i != list.node_;
+		for (Node* i(list.node_.next); i != list.node_;
 			 i = static_cast<Node*>(i->next)) {
-			this->node_->PushPrev(new Node(i->value));
+			this->node_.PushPrev(new Node(i->value));
 		}
 	}
 
 	RHO__cuda List(List<T>&& list): size_(list.size_), end_(list.end_) {
 		list.size_ = 0;
 		Node::Swap(this->node_, list.node_);
+		list.end_ = &list.node_;
 	}
 
 	RHO__cuda ~List() {
-		Node* n(this->node_->next);
-		Node* m;
-
-		while (n != this->end_) {
-			m = n->next;
-			Delete(n);
-			n = m;
+		while (this->node_.next != this->end_) {
+			Node* n(static_cast<Node*>(this->node_.next));
+			n->Pop();
+			n->value.~T();
+			Free(n);
 		}
 
-		while (n != this->node_) {
-			m = n->next;
+		while (this->node_.next != &this->node_) {
+			Node* n(static_cast<Node*>(this->node_.next));
+			n->Pop();
 			Free(n);
-			n = m;
 		}
 	}
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda T& front() {
-		return static_cast<Node*>(this->node_->next)->value;
-	}
+	RHO__cuda T& front() { return static_cast<Node*>(this->node_.next)->value; }
 	RHO__cuda const T& front() const {
-		return static_cast<Node*>(this->node_->next)->value;
+		return static_cast<Node*>(this->node_.next)->value;
 	}
 
 	RHO__cuda T& back() { return static_cast<Node*>(this->end_->prev)->value; }
@@ -130,11 +134,11 @@ public:
 			return;
 		}
 
-		Node::Swap(this->node_->prev, this->node_);
-		new (&static_cast<Node*>(this->node_->next)->value)
-			T(Forward<Args>(args));
+		Node::Swap(this->node_.prev, this->node_);
+		new (&static_cast<Node*>(this->node_.next)->value)
+			T(Forward<Args>(args)...);
 
-		if (this->end_ == this->node_->next) { this->end_ = &this->node_; }
+		if (this->end_ == this->node_.next) { this->end_ = &this->node_; }
 	}
 
 	template<typename... Args> RHO__cuda void PushBack(Args&&... args) {
@@ -145,8 +149,26 @@ public:
 			return;
 		}
 
-		new (&static_cast<Node*>(this->end_)->value) T(Forward<Args>(args));
+		new (&static_cast<Node*>(this->end_)->value) T(Forward<Args>(args)...);
 		this->end_ = this->end_->next;
+	}
+
+	RHO__cuda void PopFront() {
+		RHO__debug_if(!this->size_) RHO__throw__local("size error");
+
+		--this->size_;
+		Node::Swpa(*this->node_.next, this->node_);
+		static_cast<Node*>(this->node_.prev)->value.~T();
+
+		if (this->end_ == &this->node_) { this->end_ = this->node_.prev; }
+	}
+
+	RHO__cuda void PopBack() {
+		RHO__debug_if(!this->size_) RHO__throw__local("size error");
+
+		--this->size_;
+		this->end_ = this->end_->prev;
+		static_cast<Node*>(this->end_)->value.~T();
 	}
 
 private:

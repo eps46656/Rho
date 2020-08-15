@@ -5,6 +5,13 @@
 
 namespace rho {
 
+Space* DomainDifference::root() const {
+	Space* space[]{ this->domain_a_->root(), this->domain_b_->root() };
+	return (space[0] == space[1]) ? space[0] : nullptr;
+}
+
+#///////////////////////////////////////////////////////////////////////////////
+
 Domain* DomainDifference::domain_a() const { return this->domain_a_; }
 Domain* DomainDifference::domain_b() const { return this->domain_b_; }
 
@@ -20,7 +27,7 @@ void DomainDifference::doamin_b(Domain* domain_b) {
 #///////////////////////////////////////////////////////////////////////////////
 
 DomainDifference::DomainDifference(Domain* domain_a, Domain* domain_b):
-	DomainComplex(domain_a->root()), domain_a_(domain_a), domain_b_(domain_b) {
+	domain_a_(domain_a), domain_b_(domain_b) {
 	RHO__debug_if(domain_a->root() != domain_b->root())
 		RHO__throw__local("root error");
 }

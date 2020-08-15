@@ -1,8 +1,7 @@
 #include "define.cuh"
 #include "DomainParallelotope.cuh"
 
-#define RHO__throw__local(description)                                         \
-	RHO__throw(DomainParallelotope, __func__, description);
+#define RHO__throw__local(desc) RHO__throw(DomainParallelotope, __func__, desc)
 
 namespace rho {
 

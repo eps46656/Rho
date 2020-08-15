@@ -61,55 +61,6 @@ public:
 	using Iterator = Iterator_<T, RedBlackTree, Node>;
 	using ConstIterator = Iterator_<const T, const RedBlackTree, const Node>;
 
-	/*
-	struct Iterator {
-
-	public:
-		friend class RedBlackTree<T, Compare>;
-
-		RHO__cuda operator bool()const;
-
-		RHO__cuda bool operator==(const Iterator& iter)const;
-		RHO__cuda bool operator!=(const Iterator& iter)const;
-
-		RHO__cuda T& operator*()const;
-		RHO__cuda T* operator->()const;
-
-		RHO__cuda Iterator& operator++();
-		RHO__cuda Iterator& operator--();
-
-	private:
-		RedBlackTree* tree_;
-		Node* node_;
-
-		RHO__cuda Iterator(RedBlackTree* tree,
-						   Node* node);
-	};
-
-	struct ConstIterator {
-
-	public:
-		friend class RedBlackTree<T, Compare>;
-
-		RHO__cuda operator bool()const;
-
-		RHO__cuda bool operator==(const ConstIterator& const_iter)const;
-		RHO__cuda bool operator!=(const ConstIterator& const_iter)const;
-
-		RHO__cuda const T& operator*()const;
-		RHO__cuda const T* operator->()const;
-
-		RHO__cuda ConstIterator& operator++();
-		RHO__cuda ConstIterator& operator--();
-
-	private:
-		const RedBlackTree* tree_;
-		const Node* node_;
-
-		RHO__cuda ConstIterator(const RedBlackTree* tree,
-								const Node* node);
-	};*/
-
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
@@ -144,7 +95,7 @@ public:
 	template<typename... Args>
 	RHO__cuda pair<Node*, bool> Insert(Args&&... args);
 
-	RHO__cuda Iterator Release(const Iterator& iter);
+	RHO__cuda Iterator Remove(const Iterator& iter);
 
 	RHO__cuda void Erase(const Iterator& iter);
 
@@ -283,7 +234,7 @@ rho::pair<typename RHO__rbt::Node*, bool> RHO__rbt::Insert(Args&&... args) {
 }
 
 template<typename T, typename Compare>
-typename RHO__rbt::Iterator RHO__rbt::Release(const Iterator& iter) {
+typename RHO__rbt::Iterator RHO__rbt::Remove(const Iterator& iter) {
 	if (this == iter.tree_) { this->Release_(iter.node_); }
 	return iter;
 }
@@ -297,7 +248,7 @@ template<typename T, typename Compare> void RHO__rbt::Release_(Node* node) {
 				this->root_ = static_cast<Node*>(node->r);
 		}
 
-		node->Release();
+		node->Remove();
 
 		while (this->root_->p) this->root_ = static_cast<Node*>(this->root_->p);
 	} else {

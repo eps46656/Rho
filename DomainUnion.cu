@@ -5,12 +5,27 @@
 
 namespace rho {
 
+Space* DomainUnion::root() const {
+	if (this->domain_.empty()) { return nullptr; }
+
+	auto iter(this->domain_.begin());
+
+	Space* root((*iter)->root());
+	++iter;
+
+	for (auto end(this->domain_.end()); iter != end; ++iter) {
+		if (root != (*iter)->root()) { return nullptr; }
+	}
+
+	return root;
+}
+
 RBT<Domain*>& DomainUnion::domain() { return this->domain_; }
 const RBT<Domain*>& DomainUnion::domain() const { return this->domain_; }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-DomainUnion::DomainUnion(Space* root): DomainComplex(root) {}
+DomainUnion::DomainUnion() {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -141,5 +156,4 @@ void DomainUnion::RayCast_(RayCastDataVector& dst, RayCastDataVector& a,
 		}
 	}
 }
-
 }

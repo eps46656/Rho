@@ -11,13 +11,7 @@ void DomainComplement::domain(Domain* domain) { this->domain_ = domain; }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-DomainComplement::DomainComplement(Space* root):
-	DomainComplex(root), domain_(nullptr) {
-	RHO__debug_if(!root->is_root()) RHO__throw__local("root error");
-}
-
-DomainComplement::DomainComplement(Domain* domain):
-	DomainComplex(domain->root()), domain_(domain) {}
+DomainComplement::DomainComplement(Domain* domain): domain_(domain) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 

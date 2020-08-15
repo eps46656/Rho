@@ -12,7 +12,7 @@
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 
-#define RHO__debug_flag false
+#define RHO__debug_flag true
 
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
@@ -53,7 +53,7 @@
 	 blockIdx.x * blockDim.x * blockDim.y * blockDim.z +                       \
 	 threadIdx.z * blockDim.x * blockDim.y + threadIdx.y * blockDim.x +        \
 	 threadIdx.x)
-	
+
 #define RHO__dev_block defined __CUDA_ARCH__
 #define RHO__hst_block not defined __CUDA_ARCH__
 
@@ -221,7 +221,7 @@ RHO__cuda inline Print operator<<(Print p, double x) {
 
 RHO__cuda inline id_t get_id() {
 	// This function is not completed.
-	
+
 	//The dev version
 
 	/*static_assert(IsSame<id_t, unsigned int>::value ||

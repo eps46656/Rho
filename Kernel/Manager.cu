@@ -1,3 +1,5 @@
+#if false
+
 #include "define.cuh"
 #include "Kernel.cuh"
 
@@ -214,3 +216,5 @@ cntr::Vector<ComponentCollider*> Manager::GetComponentCollider_Full(
 }
 
 }
+
+#endif

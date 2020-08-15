@@ -6,17 +6,18 @@
 namespace rho {
 
 template<typename Iterator, typename Index,
-	typename Compare = op::eq<RmRef_t<decltype(*declval<Iterator>())>>>
+		 typename Compare = op::eq<RmRef_t<decltype(*declval<Iterator>())>>>
 RHO__cuda Iterator LinearSearch(Iterator begin, Iterator end,
-	const Index& index, Compare compare = Compare()) {
+								const Index& index,
+								Compare compare = Compare()) {
 	while (begin != end && compare(*begin, index)) { ++begin; }
 	return begin;
 }
 
 template<typename Src, typename Index,
-	typename Compare = op::lt<RmRef_t<decltype(declval<Src>()[0])>>>
-RHO__cuda size_t BinarySearch(
-	Src&& src, size_t size, const Index& index, Compare compare = Compare()) {
+		 typename Compare = op::lt<RmRef_t<decltype(declval<Src>()[0])>>>
+RHO__cuda size_t BinarySearch(Src&& src, size_t size, const Index& index,
+							  Compare compare = Compare()) {
 	size_t i(0);
 	size_t j(size);
 	size_t k;
@@ -24,20 +25,22 @@ RHO__cuda size_t BinarySearch(
 	while (i != j) {
 		k = (i + j) / 2;
 
-		if (compare(src[k], index)) i = k + 1;
-		else if (compare(index, src[k]))
+		if (compare(src[k], index)) {
+			i = k + 1;
+		} else if (compare(index, src[k])) {
 			j = k;
-		else
-			return size;
+		} else {
+			return k;
+		}
 	}
 
 	return size;
 }
 
 template<typename Src, typename Index,
-	typename Compare = op::lt<decltype(declval<Src&&>()[0])>>
-RHO__cuda size_t BinarySearchForward(
-	Src&& src, size_t size, const Index& index, Compare compare = Compare()) {
+		 typename Compare = op::lt<decltype(declval<Src&&>()[0])>>
+RHO__cuda size_t BinarySearchForward(Src&& src, size_t size, const Index& index,
+									 Compare compare = Compare()) {
 	size_t i(0);
 	size_t j(size);
 	size_t k;
@@ -54,8 +57,8 @@ RHO__cuda size_t BinarySearchForward(
 }
 
 template<typename TreeNode, typename Index, typename Compare>
-RHO__cuda TreeNode TreeSearch(
-	TreeNode node, const Index& index, Compare compare) {
+RHO__cuda TreeNode TreeSearch(TreeNode node, const Index& index,
+							  Compare compare) {
 	for (;;) {
 		if (compare(node, index)) node = node->r;
 		else if (compare(index, node))
@@ -67,10 +70,11 @@ RHO__cuda TreeNode TreeSearch(
 	return node;
 }
 
-template<typename Iterator, typename Index,
+template<
+	typename Iterator, typename Index,
 	typename Compare = op::eq<RmRef_t<decltype(*declval<Iterator>())>, Index>>
 RHO__cuda bool Contain(Iterator begin, Iterator end, const Index& index,
-	Compare compare = Compare()) {
+					   Compare compare = Compare()) {
 	for (; begin != end; ++begin) {
 		if (compare(*begin, index)) { return true; }
 	}
@@ -79,8 +83,8 @@ RHO__cuda bool Contain(Iterator begin, Iterator end, const Index& index,
 }
 
 template<typename Src, typename Index, typename Compare = op::lt<Src>>
-RHO__cuda bool Contain(
-	size_t size, Src&& src, const Index& index, Compare compare = Compare()) {
+RHO__cuda bool Contain(size_t size, Src&& src, const Index& index,
+					   Compare compare = Compare()) {
 	size_t begin(0);
 
 	for (size_t i; begin != size;) {

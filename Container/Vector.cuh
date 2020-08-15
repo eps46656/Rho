@@ -24,6 +24,8 @@ public:
 
 	RHO__cuda bool empty() const { return this->size_ == 0; }
 
+	RHO__cuda T* data() const { return this->data_; }
+
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda Vector(): size_(0), capacity_(0), data_(nullptr) {}
@@ -32,7 +34,7 @@ public:
 		size_(0), capacity_(size),
 		data_(this->capacity_ ? Malloc<T>(size) : nullptr) {
 		for (; this->size_ != size; ++this->size_)
-			new (this->data_ + this->size_) T;
+			new (this->data_ + this->size_) T();
 	}
 
 	RHO__cuda Vector(const Vector& vector):
@@ -54,7 +56,7 @@ public:
 		for (T* i(this->data_); begin != end; ++begin, ++i) new (i) T(*begin);
 	}
 
-	RHO__cuda ~Vector() { Delete(this->size_, this->data_); }
+	RHO__cuda ~Vector() { rho::Delete(this->size_, this->data_); }
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -157,19 +159,23 @@ public:
 
 	RHO__cuda T& front() {
 		RHO__debug_if(!this->size_) RHO__throw__local("index error");
-
 		return *this->data_;
 	}
 
-	RHO__cuda const T& front() const { return this->front(); }
+	RHO__cuda const T& front() const {
+		RHO__debug_if(!this->size_) RHO__throw__local("index error");
+		return *this->data_;
+	}
 
 	RHO__cuda T& back() {
 		RHO__debug_if(!this->size_) RHO__throw__local("index error");
-
 		return this->data_[this->size_ - 1];
 	}
 
-	RHO__cuda const T& back() const { return this->back(); }
+	RHO__cuda const T& back() const {
+		RHO__debug_if(!this->size_) RHO__throw__local("index error");
+		return this->data_[this->size_ - 1];
+	}
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -288,24 +294,24 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	template<typename Y> RHO__cuda bool FindErase(Y&& index) {
+	template<typename Y> RHO__cuda bool FindDelete(Y&& index) {
 		for (size_t i(0); i != this->size_; ++i) {
 			if (this->data_[i] == index) {
 				size_t r(i);
 
-				for (--this->size_; i != this->size_;)
+				for (--this->size_; i != this->size_; ++i)
 					this->data_[i] = Move(this->data_[i + 1]);
 
 				this->data_[this->size_].~T();
 
-				return i;
+				return r;
 			}
 		}
 
 		return this->size_;
 	}
 
-	RHO__cuda T* Erase(T* index) {
+	RHO__cuda T* Delete(T* index) {
 		RHO__debug_if(!this->valid_(index)) RHO__throw__local("index error");
 
 		T* end(this->data_ + (this->size_ -= 1));

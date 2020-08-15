@@ -7,27 +7,23 @@ namespace rho {
 
 class DomainIntersection: public DomainComplex {
 public:
+	RHO__cuda Space* root() const override;
+
 	RHO__cuda RBT<Domain*>& domain();
 	RHO__cuda const RBT<Domain*>& domain() const;
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda DomainIntersection(Space* root);
+	RHO__cuda DomainIntersection();
 
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda bool Refresh() const override;
 
-#///////////////////////////////////////////////////////////////////////////////
-
 	RHO__cuda bool Contain(const Num* root_point) const override;
-
-#///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda bool RayCastFull(RayCastDataVector& rcdv,
 							   const Ray& ray) const override;
-
-#///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda void GetTodTan(Num* dst, const RayCastData& rcd,
 							 const Num* root_direct) const;

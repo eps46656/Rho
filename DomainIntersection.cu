@@ -5,12 +5,29 @@
 
 namespace rho {
 
+Space* DomainIntersection::root() const {
+	if (this->domain_.empty()) { return nullptr; }
+
+	auto iter(this->domain_.begin());
+
+	Space* root((*iter)->root());
+	++iter;
+
+	for (auto end(this->domain_.end()); iter != end; ++iter) {
+		if (root != (*iter)->root()) { return nullptr; }
+	}
+
+	return root;
+}
+
+#///////////////////////////////////////////////////////////////////////////////
+
 RBT<Domain*>& DomainIntersection::domain() { return this->domain_; }
 const RBT<Domain*>& DomainIntersection::domain() const { return this->domain_; }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-DomainIntersection::DomainIntersection(Space* root): DomainComplex(root) {}
+DomainIntersection::DomainIntersection() {}
 
 #///////////////////////////////////////////////////////////////////////////////
 

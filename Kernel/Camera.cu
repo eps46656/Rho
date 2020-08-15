@@ -14,12 +14,10 @@ void Camera::RenderData::Clear() const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-Manager* Camera::manager() const { return this->manager_; }
-
-Space* Camera::root() const { return this->root_; }
+Space* Camera::root() const { return this->ref_->root(); }
 Space* Camera::ref() const { return this->ref_; }
 
-size_t Camera::dim_r() const { return this->dim_r_; }
+size_t Camera::dim_r() const { return this->ref_->dim_r(); }
 
 size_t Camera::image_height() const { return this->image_height_; }
 size_t Camera::image_width() const { return this->image_width_; }
@@ -31,91 +29,99 @@ void Camera::resize(size_t image_height, size_t image_width) {
 }
 
 size_t Camera::max_depth() const { return this->max_depth_; }
-
 void Camera::set_max_depth(size_t max_depth) { this->max_depth_ = max_depth; }
 
-pair<size_t, Camera::RenderData*>& Camera::render_data() const {
-	return this->render_data_;
+size_t Camera::render_data_size() const { return this->render_data_size_; }
+Camera::RenderData* Camera::render_data() const { return this->render_data_; }
+
+RHO__cuda ComponentCollider::Material& Camera::void_cmpt_collider_material() {
+	return this->void_cmpt_collider_material_;
+}
+
+RHO__cuda const ComponentCollider::Material&
+Camera::void_cmpt_collider_material() const {
+	return this->void_cmpt_collider_material_;
+}
+
+#///////////////////////////////////////////////////////////////////////////////
+
+void Camera::AddCmptCollider(ComponentCollider* cmpt_collider) {
+	this->cmpt_collider__ray_cast_order_.Push(cmpt_collider);
+	this->cmpt_collider__detect_order_.Push(cmpt_collider);
+}
+
+void Camera::AddCmptLight(ComponentLight* cmpt_light) {
+	this->cmpt_light_.Push(cmpt_light);
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
 Camera::Camera(Space* ref, size_t image_height, size_t image_width,
 			   size_t max_depth):
-	manager_(ref->manager()),
-	root_(ref->root()), ref_(ref), dim_r_(ref->dim_r()),
+	ref_(ref),
 	image_height_(image_height), image_width_(image_width),
 	image_size_(image_height * image_width), max_depth_(max_depth),
-	render_data_(0, nullptr) {
-	this->manager_->RegisterCamera_(this);
-}
+	render_data_size_(0), render_data_(nullptr) {}
 
 Camera::~Camera() {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
 void Camera::RenderReady(size_t size) const {
-	Camera_Render_pre_<<<1, 1>>>(this, size);
+	CameraRenderReady_<<<1, 1>>>(this, size);
 }
 
 void Camera::Render(size_t block_pos_h, size_t block_pos_w, size_t block_size_h,
 					size_t block_size_w) const {
-	Camera_Render_main_<<<32, 1024>>>(this, block_pos_h, block_pos_w,
-									  block_size_h, block_size_w);
+	CameraRenderMain_<<<32, 1024>>>(this, block_pos_h, block_pos_w,
+									block_size_h, block_size_w);
 }
 
-RHO__glb void Camera_Render_(const Camera* camera) {
-	for (size_t i(0); i != camera->render_data_.first; ++i)
-		camera->render_data_.second[i].rendered = false;
-}
-
-RHO__glb void Camera_Render_pre_(const Camera* camera, size_t size) {
+RHO__glb void CameraRenderReady_(const Camera* camera, size_t size) {
 	camera->ref_->RefreshSelf();
 
 	{
-		const RBT<Object*>& object(camera->manager_->active_object());
+		// compare cmpt_collider__ray_cast_order_ and
+		// cmpt_collider__detect_order_
+		// to ensure their elements are all same
+		// and refresh them
 
-		auto iter(object.begin());
+		size_t size(camera->cmpt_collider__ray_cast_order_.size());
 
-		for (auto end(object.end()); iter != end; ++iter) {
-			if (!(*iter)->Refresh()) { RHO__throw__local("Refresh error"); }
+		RHO__debug_if(size != camera->cmpt_collider__detect_order_.size())
+			RHO__throw__local("size error");
+
+		cntr::Vector<ComponentCollider*> temp(
+			camera->cmpt_collider__ray_cast_order_);
+		Sort(temp.begin(), temp.end());
+
+		for (size_t i(0); i != size; ++i) {
+			if (BinarySearch(temp, size,
+							 camera->cmpt_collider__detect_order_[i]) == size) {
+				RHO__throw__local("not found error");
+			}
+
+			if (!camera->cmpt_collider__detect_order_[i]->Refresh())
+				RHO__throw__local("refresh error");
+		}
+
+		Sort(camera->cmpt_collider__ray_cast_order_.begin(),
+			 camera->cmpt_collider__ray_cast_order_.end(),
+			 [](const ComponentCollider* x, const ComponentCollider* y) {
+				 return x->domain()->Complexity() < y->domain()->Complexity();
+			 });
+	}
+
+	{
+		for (size_t i(0); i != camera->cmpt_light_.size(); ++i) {
+			if (!camera->cmpt_light_[i]->Refresh())
+				RHO__throw__local("refresh error");
 		}
 	}
 
 	{
-		const ComponentContainer& cmpt_cntr(camera->manager_->active_cmpt());
-
-		camera->cmpt_collider_.Clear();
-		camera->cmpt_collider_.Reserve(cmpt_cntr.size());
-
-		camera->cmpt_light_.Clear();
-		camera->cmpt_light_.Reserve(cmpt_cntr.size());
-
-		auto iter(cmpt_cntr.begin());
-
-		for (auto end(cmpt_cntr.end()); iter != end; ++iter) {
-			if (!(*iter)->Refresh()) { RHO__throw__local("Refresh error"); }
-
-			switch ((*iter)->type) {
-				case Component::Type::collider: {
-					camera->cmpt_collider_.Push(
-						static_cast<ComponentCollider*>(*iter));
-
-					break;
-				}
-				case Component::Type::light: {
-					camera->cmpt_light_.Push(
-						static_cast<ComponentLight*>(*iter));
-
-					break;
-				}
-			}
-		}
-
-		Sort(camera->cmpt_collider_.begin(), camera->cmpt_collider_.end(),
-			 [](const ComponentCollider* x, const ComponentCollider* y) {
-				 return x->domain()->Complexity() < y->domain()->Complexity();
-			 });
+		RHO__debug_if(!camera->void_cmpt_collider_material_.Check())
+			RHO__throw__local("material error");
 	}
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -140,27 +146,22 @@ RHO__glb void Camera_Render_pre_(const Camera* camera, size_t size) {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	if (camera->render_data_.first < size) {
-		camera->render_data_.first = size;
-		Delete(camera->render_data_.second);
-		camera->render_data_.second = Malloc<Camera::RenderData>(size);
+	if (camera->render_data_size_ < size) {
+		camera->render_data_size_ = size;
+		Delete(camera->render_data_);
+		camera->render_data_ = Malloc<Camera::RenderData>(size);
 	}
-
-	// camera->RenderDataRefresh_(render_data);
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-RHO__glb void Camera_Render_main_(const Camera* camera,
-								  const size_t block_pos_h,
-								  const size_t block_pos_w,
-								  const size_t block_size_h,
-								  const size_t block_size_w) {
+RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
+								const size_t block_pos_w,
+								const size_t block_size_h,
+								const size_t block_size_w) {
 	const size_t thread_num(RHO__thread_num);
 	const size_t thread_id(RHO__thread_index);
 	const size_t block_size(block_size_h * block_size_w);
-
-	// variable to store current trace data
 
 	size_t render_index(thread_id);
 	Camera::RenderData* render_data;
@@ -169,13 +170,13 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 	Num d_dist;
 
 	RayCastDataPair rcdp;
-	Vector point[2];
+	Vec point[2];
 
 	ComponentCollider* collider_a;
 	ComponentCollider* collider_b;
 
-	Material* material_a;
-	Material* material_b;
+	const ComponentCollider::Material* material_a;
+	const ComponentCollider::Material* material_b;
 
 	Texture::Data texture_data;
 
@@ -220,7 +221,7 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 			++task_size;
 			task = static_cast<Camera::Task*>(task_node.next);
 
-			render_data = camera->render_data_.second + render_index;
+			render_data = camera->render_data_ + render_index;
 			render_data->dist = 0;
 			render_data->intensity[0] = 0;
 			render_data->intensity[1] = 0;
@@ -258,7 +259,8 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 		// every point between the first and second hit points is
 		// in the material b
 
-		task->ray.RayCastForRender(rcdp, camera->cmpt_collider_);
+		task->ray.RayCastForRender(rcdp,
+								   camera->cmpt_collider__ray_cast_order_);
 
 		if (!rcdp[0]) {
 			/*goto function_head; */
@@ -276,9 +278,18 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 
 		task->ray.point(temp, rcdp[0]->t / 2);
 
-		material_a = (collider_a = camera->manager_->GetComponentCollider(temp))
-						 ? collider_a->object()->material()
-						 : camera->manager_->void_material();
+		collider_a = nullptr;
+
+		for (size_t i(0); i != camera->cmpt_collider__detect_order_.size();
+			 ++i) {
+			if (camera->cmpt_collider__detect_order_[i]->Contain(temp)) {
+				collider_a = camera->cmpt_collider__detect_order_[i];
+				break;
+			}
+		}
+
+		material_a = collider_a ? &collider_a->material()
+								: &camera->void_cmpt_collider_material();
 
 		// get collider_a
 
@@ -327,10 +338,18 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 			task->ray.point(temp, rcdp[1] ? ((rcdp[0]->t + rcdp[1]->t) / 2)
 										  : (rcdp[0]->t + 1));
 
-			material_b =
-				(collider_b = camera->manager_->GetComponentCollider(temp))
-					? collider_b->object()->material()
-					: camera->manager_->void_material();
+			collider_b = nullptr;
+
+			for (size_t i(0); i != camera->cmpt_collider__detect_order_.size();
+				 ++i) {
+				if (camera->cmpt_collider__detect_order_[i]->Contain(temp)) {
+					collider_b = camera->cmpt_collider__detect_order_[i];
+					break;
+				}
+			}
+
+			material_b = collider_b ? &collider_b->material()
+									: &camera->void_cmpt_collider_material();
 
 			if (material_b->transmittance[0].ne<0>() ||
 				material_b->transmittance[1].ne<0>() ||
@@ -461,8 +480,8 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 			// refraction transmittance
 
 			Num3 intensity(camera->cmpt_light_[i]->intensity(
-				point[0], tod, camera->cmpt_collider_, reflection_vector,
-				texture_data, task->ray, task->dist));
+				point[0], tod, camera->cmpt_collider__ray_cast_order_,
+				reflection_vector, texture_data, task->ray, task->dist));
 
 			render_data->intensity[0] += texture_data.color[0] / 255 *
 										 intensity[0] * difuss_reflectance[0] *
@@ -487,15 +506,4 @@ RHO__glb void Camera_Render_main_(const Camera* camera,
 	}
 }
 
-void Camera::RenderDataRefresh_(RenderData* render_data) const {
-	/*if (this->render_data_.first < this->size_) {
-		Free(this->render_data_.second);
-		this->render_data_.second =
-			Malloc<RenderData>(this->size_);
-	}*/
-
-	this->render_data_.second = render_data;
-
-	printf("render data alloc end\n");
-}
 }

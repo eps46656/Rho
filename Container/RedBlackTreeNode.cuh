@@ -52,7 +52,7 @@ struct RedBlackTreeNode {
 
 #////////////////////////////////////////////////
 
-	RHO__cuda void Release();
+	RHO__cuda void Remove();
 	RHO__cuda void ReleaseFix();
 };
 
@@ -65,7 +65,7 @@ inline RedBlackTreeNode::RedBlackTreeNode() :
 	p(nullptr), l(nullptr), r(nullptr),
 	color(black) {}
 
-inline RedBlackTreeNode::~RedBlackTreeNode() { this->Release(); }
+inline RedBlackTreeNode::~RedBlackTreeNode() { this->Remove(); }
 
 #////////////////////////////////////////////////
 
@@ -275,7 +275,7 @@ inline void RedBlackTreeNode::InsertFix() {
 
 #////////////////////////////////////////////////
 
-inline void RedBlackTreeNode::Release() {
+inline void RedBlackTreeNode::Remove() {
 	if (!this->p && !this->l && !this->r) { return; }
 
 	Self* n(this);

@@ -1,4 +1,6 @@
-﻿#ifndef RHO__define_guard__Kernel__Manager_cuh
+﻿#if false
+
+#ifndef RHO__define_guard__Kernel__Manager_cuh
 #define RHO__define_guard__Kernel__Manager_cuh
 
 #include "init.cuh"
@@ -28,12 +30,6 @@ public:
 	RHO__cuda const cntr::Vector<Component*>& priority_vector() const;
 	RHO__cuda bool
 	priority_vector(const cntr::Vector<Component*>& priority_vector);
-
-#///////////////////////////////////////////////////////////////////////////////
-
-	RHO__cuda Texture* default_texture() const;
-	RHO__cuda Material* default_material() const;
-	RHO__cuda Material* void_material() const;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -111,5 +107,7 @@ private:
 };
 
 }
+
+#endif
 
 #endif

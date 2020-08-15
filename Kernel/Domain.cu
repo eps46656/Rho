@@ -3,16 +3,11 @@
 
 namespace rho {
 
-Manager* Domain::manager() const { return this->manager_; }
-Space* Domain::root() const { return this->root_; }
-
-dim_t Domain::dim_r() const { return this->root_->dim_r(); }
+dim_t Domain::dim_r() const { return this->root()->dim_r(); }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-Domain::Domain(Space* root): manager_(root->manager()), root_(root) {
-	RHO__debug_if(root->parent()) RHO__throw(Domain, __func__, "root error");
-}
+Domain::Domain(Type type_): type(type_) {}
 
 Domain::~Domain() {}
 

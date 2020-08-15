@@ -3,6 +3,8 @@
 
 namespace rho {
 
+Space* DomainSole::root() const { return this->ref_->root(); }
+
 Space* DomainSole::ref() const { return this->ref_; }
 void DomainSole::set_ref(Space* ref) { this->ref_ = ref; }
 
@@ -11,7 +13,7 @@ dim_t DomainSole::dim_cr() const { return this->ref_->dim_cr(); }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-DomainSole::DomainSole(Space* ref): Domain(ref->root()), ref_(ref) {}
+DomainSole::DomainSole(Space* ref): Domain(Type::sole), ref_(ref) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 

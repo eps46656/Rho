@@ -15,27 +15,21 @@ bool Component::latest() const { return this->latest_; }
 
 priority_t Component::priority() const { return this->priority_; }
 
-Manager* Component::manager() const { return this->manager_; }
-Space* Component::root() const { return this->root_; }
+Space* Component::root() const { return this->object_->root(); }
 Object* Component::object() const { return this->object_; }
 
-size_t Component::dim_r() const { return this->dim_r_; }
+size_t Component::dim_r() const { return this->object_->root()->dim_r(); }
 
 #///////////////////////////////////////////////////////////////////////////////
 
 Component::Component(Type type, Object* object):
-	type(type),
-
-	active_(true), latest_(false),
-
-	manager_(object->manager_), root_(object->root_), object_(object),
-
-	dim_r_(object->dim_r_) {
-	this->manager_->AddComponent_(this);
-	this->object_->AddComponent_(this);
+	type(type), active_(true), latest_(false), object_(object) {
+	if (this->object_) { this->object_->AddCmpt_(this); }
 }
 
-Component::~Component() {}
+Component::~Component() {
+	if (this->object_) { this->object_->SubCmpt_(this); }
+}
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -43,25 +37,14 @@ void Component::SetLatestFalse_() { this->latest_ = false; }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-void Component::Active(bool active) {
-	if (active == this->active_) return;
-
-	if (active) {
-		this->object_->ActiveSelfAndAncestor();
-		this->manager_->ActiveComponentTrue_(this);
-		this->active_ = true;
-	} else {
-		this->manager_->ActiveComponentFalse_(this);
-		this->active_ = false;
-	}
+Component* Component::SetObject(Object* object) {
+	if (this->object_ == object) { return this; }
+	if (this->object_) { this->object_->SubCmpt_(this); }
+	if (this->object_ = object) { this->object_->AddCmpt_(this); }
+	return this;
 }
 
-void Component::Delete() {
-	this->manager_->DeleteComponent_(this);
-	this->object_->DeleteComponent_(this);
-	this->~Component();
-	Free(this);
-}
+void Component::Active(bool active) { this->active_ = active; }
 
 #///////////////////////////////////////////////////////////////////////////////
 

@@ -8,11 +8,26 @@ namespace rho {
 
 class ComponentCollider: public Component {
 public:
-	RHO__cuda const Domain* domain() const;
-	RHO__cuda Texture* texture() const;
+	struct Material {
+		Num refraction_index;
+		Num3 transmittance;
 
+		RHO__cuda bool Check() const;
+		RHO__cuda void SetDefault();
+		RHO__cuda void Set(Num refration_index, Num transmittance_0,
+						   Num transmittance_1, Num transmittance_2);
+	};
+
+#///////////////////////////////////////////////////////////////////////////////
+
+	RHO__cuda const Domain* domain() const;
+	RHO__cuda Material& material();
+	RHO__cuda const Material& material() const;
+	RHO__cuda const Texture* texture() const;
+
+	RHO__cuda ComponentCollider* set_object(Object* object);
 	RHO__cuda ComponentCollider* set_domain(const Domain* domain);
-	RHO__cuda ComponentCollider* set_texture(Texture* texture);
+	RHO__cuda ComponentCollider* set_texture(const Texture* texture);
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -25,7 +40,7 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda virtual bool Contain(const Vector& point) const;
+	RHO__cuda virtual bool Contain(const Num* point) const;
 
 	RHO__cuda virtual RayCastData RayCast(const Ray& ray) const;
 	RHO__cuda virtual bool RayCastFull(RayCastDataVector& rcdv,
@@ -35,7 +50,8 @@ public:
 
 private:
 	const Domain* domain_;
-	Texture* texture_;
+	Material material_;
+	const Texture* texture_;
 };
 
 }

@@ -3,6 +3,6 @@
 
 namespace rho {
 
-DomainComplex::DomainComplex(Space* root): Domain(root) {}
+DomainComplex::DomainComplex(): Domain(Type::complex) {}
 
 }

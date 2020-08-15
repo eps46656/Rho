@@ -1,4 +1,4 @@
-#ifndef RHO__define_guard__Kernel__init_cuh
+﻿#ifndef RHO__define_guard__Kernel__init_cuh
 #define RHO__define_guard__Kernel__init_cuh
 
 #include "../define.cuh"
@@ -6,7 +6,9 @@
 #include "../Base/sort.cuh"
 #include "../Calculus/Calculus.cuh"
 #include "../Container/Array.cuh"
+#include "../Container/EnumerateVector.cuh"
 #include "../Container/BidirectionalNode.cuh"
+#include "../Container/List.cuh"
 #include "../Container/Map.cuh"
 #include "../Container/RedBlackTree.cuh"
 #include "../Pointer/Any.cuh"
@@ -64,8 +66,6 @@ using ComponentContainer = RBT<Component*, ComponentContainerCmp>;
 using ConstComponentContainer = RBT<const Component*, ComponentContainerCmp>;
 
 #///////////////////////////////////////////////////////////////////////////////
-
-class Material;
 
 class Texture;
 class TextureSolid;

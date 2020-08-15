@@ -7,13 +7,18 @@ namespace rho {
 
 class Domain {
 public:
-	RHO__cuda Manager* manager() const;
-	RHO__cuda Space* root() const;
-	RHO__cuda dim_t dim_r() const;
+	enum Type { universe, sole, complex };
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda Domain(Space* root = nullptr);
+	const Type type;
+
+	RHO__cuda virtual Space* root() const = 0;
+	RHO__cuda virtual dim_t dim_r() const;
+
+#///////////////////////////////////////////////////////////////////////////////
+
+	RHO__cuda Domain(Type type);
 	RHO__cuda virtual ~Domain();
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -54,7 +59,6 @@ public:
 
 private:
 	Manager* manager_;
-	Space* root_;
 };
 
 }

@@ -4,7 +4,8 @@
 namespace rho {
 
 RefractionData::RefractionData(const RayCastData& rcd, const Tod& tod,
-							   const Material* x, const Material* y) {
+							   const ComponentCollider::Material* x,
+							   const ComponentCollider::Material* y) {
 	Num n(y->refraction_index / x->refraction_index);
 
 	if (n.eq<1>()) {

@@ -3,6 +3,7 @@
 
 #include "init.cuh"
 #include "Manager.cuh"
+#include "ComponentCollider.cuh"
 #include "Ray.cuh"
 
 namespace rho {
@@ -35,8 +36,6 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda Manager* manager() const;
-
 	RHO__cuda Space* root() const;
 	RHO__cuda Space* ref() const;
 
@@ -51,7 +50,17 @@ public:
 	RHO__cuda size_t max_depth() const;
 	RHO__cuda void set_max_depth(size_t max_depth);
 
-	RHO__cuda pair<size_t, RenderData*>& render_data() const;
+	RHO__cuda size_t render_data_size() const;
+	RHO__cuda RenderData* render_data() const;
+
+	RHO__cuda ComponentCollider::Material& void_cmpt_collider_material();
+	RHO__cuda const ComponentCollider::Material&
+	void_cmpt_collider_material() const;
+
+#///////////////////////////////////////////////////////////////////////////////
+
+	RHO__cuda void AddCmptCollider(ComponentCollider* cmpt_collider);
+	RHO__cuda void AddCmptLight(ComponentLight* cmpt_light);
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -62,19 +71,8 @@ public:
 	RHO__hst void Render(size_t block_pos_h, size_t block_pos_w,
 						 size_t block_size_h, size_t block_size_w) const;
 
-	RHO__glb friend void Camera_Render_pre_(const Camera* camera, size_t size);
-	RHO__glb friend void Camera_Render_main_(const Camera* camera,
-											 const size_t block_pos_h,
-											 const size_t block_pos_w,
-											 const size_t block_size_h,
-											 const size_t block_size_w);
-
-	RHO__glb friend void Camera_Render_(const Camera* camera);
-
 private:
-	Manager* manager_;
-
-	size_t dim_r_;
+	Space* ref_;
 
 	size_t image_height_;
 	size_t image_width_;
@@ -82,23 +80,24 @@ private:
 
 	size_t block_size_;
 
-	Space* root_;
-	Space* ref_;
-
 	size_t max_depth_;
 
 #///////////////////////////////////////////////////////////////////////////////
 
 	// used data when Imaging
 
-	mutable pair<size_t, RenderData*> render_data_;
+	mutable size_t render_data_size_;
+	mutable RenderData* render_data_;
 
-	mutable cntr::Vector<ComponentCollider*> cmpt_collider_;
+	mutable cntr::Vector<ComponentCollider*> cmpt_collider__ray_cast_order_;
+	mutable cntr::Vector<ComponentCollider*> cmpt_collider__detect_order_;
 	mutable cntr::Vector<ComponentLight*> cmpt_light_;
 
 	mutable Vec direct_f_;
 	mutable Vec direct_h_;
 	mutable Vec direct_w_;
+
+	ComponentCollider::Material void_cmpt_collider_material_;
 
 	// mutable pair<cntr::BidirectionalNode*> task_stack_[thread_num];
 	// thread_stack_[thread_num].first  point to all allocated task
@@ -112,9 +111,13 @@ private:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda void RenderDataRefresh_(RenderData* render_data) const;
+	RHO__glb friend void CameraRenderReady_(const Camera* camera, size_t size);
+	RHO__glb friend void CameraRenderMain_(const Camera* camera,
+										   const size_t block_pos_h,
+										   const size_t block_pos_w,
+										   const size_t block_size_h,
+										   const size_t block_size_w);
 };
-
 }
 
 #endif

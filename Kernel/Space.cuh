@@ -14,9 +14,6 @@ public:
 
 	RHO__cuda bool is_root() const;
 
-	RHO__cuda Manager* manager();
-	RHO__cuda const Manager* manager() const;
-
 	RHO__cuda Space* parent();
 	RHO__cuda const Space* parent() const;
 
@@ -25,6 +22,7 @@ public:
 
 	RHO__cuda const cntr::Vector<Space*>& child();
 	RHO__cuda const cntr::Vector<const Space*>& child() const;
+	RHO__cuda const cntr::Vector<const Space*>& const_child() const;
 
 	RHO__cuda size_t depth() const;
 
@@ -72,42 +70,8 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda Space* set_origin(const Num* origin);
-	RHO__cuda Space* set_axis(const Num* axis);
-
-	RHO__cuda Space* set_origin(const Vector& origin);
-	RHO__cuda Space* set_axis(const Matrix& axis);
-
-#///////////////////////////////////////////////////////////////////////////////
-
-	/*template<typename... Args> RHO__cuda Space* set_origin(Args&&... args) {
-		RHO__debug_if(this->dim_s_ != sizeof...(args))
-			RHO__throw(Space, __func__, "dim error");
-
-		Assign<sizeof...(args)>(this->origin_, Forward<Args>(args)...);
-		return this;
-	}*/
-
-	/*template<typename... Args> RHO__cuda Space* set_axis(Args&&... args) {
-		RHO__debug_if(this->dim_s_ * this->dim_p_ != sizeof...(args))
-			RHO__throw(Space, __func__, "dim error");
-
-		Assign2D<>
-	}*/
-
-#///////////////////////////////////////////////////////////////////////////////
-
-	RHO__cuda void Refresh() const;
-	// refresh its ancestor and descendant and itself
-	RHO__cuda bool RefreshSelf() const;
-
-	RHO__cuda void set_latest_false() const;
-
-	RHO__cuda void Delete();
-
-#///////////////////////////////////////////////////////////////////////////////
-
 #define RHO__args_ds Num *dest, const Num *src
+#define RHO__args_dsb Num *dest, const Num *src, const Space *branch
 
 	RHO__cuda void MapPointToParent_sp(RHO__args_ds) const;
 	RHO__cuda void MapPointToParent_sr(RHO__args_ds) const;
@@ -149,19 +113,15 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda void MapPointToBranch_sb(RHO__args_ds, const Space* branch) const;
-	RHO__cuda void MapPointToBranch_sr(RHO__args_ds, const Space* branch) const;
-	RHO__cuda void MapPointToBranch_rb(RHO__args_ds, const Space* branch) const;
-	RHO__cuda void MapPointToBranch_rr(RHO__args_ds, const Space* branch) const;
+	RHO__cuda void MapPointToBranch_sb(RHO__args_dsb) const;
+	RHO__cuda void MapPointToBranch_sr(RHO__args_dsb) const;
+	RHO__cuda void MapPointToBranch_rb(RHO__args_dsb) const;
+	RHO__cuda void MapPointToBranch_rr(RHO__args_dsb) const;
 
-	RHO__cuda void MapVectorToBranch_sb(RHO__args_ds,
-										const Space* branch) const;
-	RHO__cuda void MapVectorToBranch_sr(RHO__args_ds,
-										const Space* branch) const;
-	RHO__cuda void MapVectorToBranch_rb(RHO__args_ds,
-										const Space* branch) const;
-	RHO__cuda void MapVectorToBranch_rr(RHO__args_ds,
-										const Space* branch) const;
+	RHO__cuda void MapVectorToBranch_sb(RHO__args_dsb) const;
+	RHO__cuda void MapVectorToBranch_sr(RHO__args_dsb) const;
+	RHO__cuda void MapVectorToBranch_rb(RHO__args_dsb) const;
+	RHO__cuda void MapVectorToBranch_rr(RHO__args_dsb) const;
 
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
@@ -179,25 +139,26 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda void ProjectPointFromRoot_rs(Num* dest, const Num* src) const;
-	RHO__cuda void ProjectPointFromRoot_rr(Num* dest, const Num* src) const;
+	RHO__cuda void ProjectPointFromRoot_rs(RHO__args_ds) const;
+	RHO__cuda void ProjectPointFromRoot_rr(RHO__args_ds) const;
 
-	RHO__cuda void ProjectVectorFromRoot_rs(Num* dest, const Num* src) const;
-	RHO__cuda void ProjectVectorFromRoot_rr(Num* dest, const Num* src) const;
-
-#///////////////////////////////////////////////////////////////////////////////
-
-	RHO__cuda void ProjectPointFromBranch_bs(Num* dest, const Num* src) const;
-	RHO__cuda void ProjectPointFromBranch_rs(Num* dest, const Num* src) const;
-	RHO__cuda void ProjectPointFromBranch_br(Num* dest, const Num* src) const;
-	RHO__cuda void ProjectPointFromBranch_rr(Num* dest, const Num* src) const;
-
-	RHO__cuda void ProjectVectorFromBranch_bs(Num* dest, const Num* src) const;
-	RHO__cuda void ProjectVectorFromBranch_rs(Num* dest, const Num* src) const;
-	RHO__cuda void ProjectVectorFromBranch_br(Num* dest, const Num* src) const;
-	RHO__cuda void ProjectVectorFromBranch_rr(Num* dest, const Num* src) const;
+	RHO__cuda void ProjectVectorFromRoot_rs(RHO__args_ds) const;
+	RHO__cuda void ProjectVectorFromRoot_rr(RHO__args_ds) const;
 
 #///////////////////////////////////////////////////////////////////////////////
+
+	RHO__cuda void ProjectPointFromBranch_bs(RHO__args_ds) const;
+	RHO__cuda void ProjectPointFromBranch_rs(RHO__args_ds) const;
+	RHO__cuda void ProjectPointFromBranch_br(RHO__args_ds) const;
+	RHO__cuda void ProjectPointFromBranch_rr(RHO__args_ds) const;
+
+	RHO__cuda void ProjectVectorFromBranch_bs(RHO__args_ds) const;
+	RHO__cuda void ProjectVectorFromBranch_rs(RHO__args_ds) const;
+	RHO__cuda void ProjectVectorFromBranch_br(RHO__args_ds) const;
+	RHO__cuda void ProjectVectorFromBranch_rr(RHO__args_ds) const;
+
+#undef RHO__args_ds
+#undef RHO__args_dsb
 
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
@@ -207,20 +168,38 @@ public:
 	RHO__cuda bool IncludeVectorFromRoot_r(const Num* src) const;
 
 #///////////////////////////////////////////////////////////////////////////////
-#///////////////////////////////////////////////////////////////////////////////
-#///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda bool Overlap(const Space* branch) const;
 	RHO__cuda bool Include(const Space* branch) const;
 
+#///////////////////////////////////////////////////////////////////////////////
+
+	RHO__cuda Space* SetParent(Space* parent);
+
+	RHO__cuda Space* SetOrigin(const Num* origin);
+	RHO__cuda Space* SetAxis(const Num* axis);
+
+	RHO__cuda Space* EnumSetOrigin(const cntr::EnumerateVector<Num>& origin);
+	RHO__cuda Space* EnumSetAxis(const cntr::EnumerateVector<Num>& axis);
+
+	RHO__cuda Space* SetOrigin(const Vector& origin);
+	RHO__cuda Space* SetAxis(const Matrix& axis);
+
+	RHO__cuda void Refresh() const;
+	// refresh its ancestor and descendant and itself
+	RHO__cuda bool RefreshSelf() const;
+
+	RHO__cuda void set_latest_false() const;
+
+	RHO__cuda void Delete();
+
 private:
 	mutable bool latest_;
 
-	mutable Manager* manager_;
 	mutable Space* root_;
 	mutable Space* parent_;
 	mutable cntr::Vector<Space*> child_;
-	mutable cntr::Vector<const Space*> child_const_;
+	mutable cntr::Vector<const Space*> const_child_;
 
 	size_t depth_;
 

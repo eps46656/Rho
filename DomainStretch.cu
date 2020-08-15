@@ -16,11 +16,16 @@ Domain* DomainStretch::domain() const { return this->domain_; }
 void DomainStretch::ref(Space* ref) { this->ref_ = ref; }
 void DomainStretch::domain(Domain* domain) { this->domain_ = domain; }
 
+Space* DomainStretch::root() const {
+	return (this->ref_->root() == this->domain_->root()) ? this->ref_->root()
+														 : nullptr;
+}
+
 #///////////////////////////////////////////////////////////////////////////////
 
 DomainStretch::DomainStretch(Space* ref, Domain* domain):
-	DomainComplex(domain->root()), ref_(ref),
-	eff_(New<Space>(ref->dim_s() - 1, this->root())), domain_(domain) {}
+	ref_(ref), eff_(New<Space>(ref->dim_s() - 1, ref->root())),
+	domain_(domain) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -31,8 +36,8 @@ bool DomainStretch::Refresh() const {
 		return false;
 	}
 
-	this->eff_->set_origin(this->ref_->root_origin());
-	this->eff_->set_axis(this->ref_->root_axis());
+	this->eff_->SetOrigin(this->ref_->root_origin());
+	this->eff_->SetAxis(this->ref_->root_axis());
 	this->eff_->RefreshSelf();
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -75,13 +80,13 @@ bool DomainStretch::Contain(const Num* root_point) const {
 			auto rcd(New<RayCastDataCore_>());                                 \
 			rcd->domain = this;                                                \
 			rcd->t = rct.t[0];                                                 \
-			rcd->phase.set(false, true);                                        \
+			rcd->phase.set(false, true);                                       \
 			dst.Push(rcd);                                                     \
 		}                                                                      \
 		auto rcd(New<RayCastDataCore_>());                                     \
 		rcd->domain = this;                                                    \
 		rcd->t = rct.t[1];                                                     \
-		rcd->phase.set(true, false);                                            \
+		rcd->phase.set(true, false);                                           \
 		dst.Push(rcd);                                                         \
 	}
 
