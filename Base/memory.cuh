@@ -66,12 +66,7 @@ template<typename T> RHO__cuda void Delete(size_t size, T* ptr) {
 
 template<typename T> RHO__cuda void Delete(T* begin, T* end) {
 	if (begin == end) { return; }
-
-	do {
-		--end;
-		end->~T();
-	} while (begin != end);
-
+	for (; begin != end; ++begin) { begin->~T(); }
 	Free(begin);
 }
 
@@ -290,8 +285,7 @@ struct Assign2D_<i, row_dim, col_dim, row_dim, align> {
 
 template<size_t col_dim, size_t row_dim, size_t align>
 struct Assign2D_<col_dim, 0, col_dim, row_dim, align> {
-	template<typename Dst>
-	RHO__cuda static void F(Dst&& dst) {}
+	template<typename Dst> RHO__cuda static void F(Dst&& dst) {}
 };
 
 template<size_t col_size, size_t row_size, size_t align, typename Dst,

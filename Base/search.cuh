@@ -48,9 +48,11 @@ RHO__cuda size_t BinarySearchForward(Src&& src, size_t size, const Index& index,
 	while (i != j) {
 		k = (i + j) / 2;
 
-		if (compare(index, src[k])) j = k;
-		else
+		if (compare(index, src[k])) {
+			j = k;
+		} else {
 			i = k + 1;
+		}
 	}
 
 	return i;
@@ -59,12 +61,14 @@ RHO__cuda size_t BinarySearchForward(Src&& src, size_t size, const Index& index,
 template<typename TreeNode, typename Index, typename Compare>
 RHO__cuda TreeNode TreeSearch(TreeNode node, const Index& index,
 							  Compare compare) {
-	for (;;) {
-		if (compare(node, index)) node = node->r;
-		else if (compare(index, node))
+	while (node) {
+		if (compare(node, index)) {
+			node = node->r;
+		} else if (compare(index, node)) {
 			node = node->l;
-		else
+		} else {
 			return node;
+		}
 	}
 
 	return node;
@@ -90,11 +94,13 @@ RHO__cuda bool Contain(size_t size, Src&& src, const Index& index,
 	for (size_t i; begin != size;) {
 		i = (begin + size) / 2;
 
-		if (compare(index, src[i])) size = i;
-		else if (compare(src[i], index))
+		if (compare(index, src[i])) {
+			size = i;
+		} else if (compare(src[i], index)) {
 			begin = i + 1;
-		else
+		} else {
 			return true;
+		}
 	}
 
 	return false;

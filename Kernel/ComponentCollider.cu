@@ -94,8 +94,7 @@ bool ComponentCollider::RayCastFull(RayCastDataVector& rcdv,
 
 void ComponentCollider::RayCastForRender(RayCastDataPair& rcdp,
 										 const Ray& ray) const {
-	this->domain_->RayCastForRender(rcdp, const_cast<ComponentCollider*>(this),
-									ray);
+	this->domain_->RayCastForRender(rcdp, this, ray);
 }
 
 }

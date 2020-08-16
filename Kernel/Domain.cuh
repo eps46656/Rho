@@ -33,9 +33,10 @@ public:
 
 	RHO__cuda virtual bool RayCastB(const Ray& ray) const;
 	RHO__cuda virtual RayCastData RayCast(const Ray& ray) const;
-	RHO__cuda virtual void RayCastForRender(RayCastDataPair& rcdp,
-											ComponentCollider* cmpt_collider,
-											const Ray& ray) const;
+	RHO__cuda virtual void
+	RayCastForRender(RayCastDataPair& rcdp,
+					 const ComponentCollider* cmpt_collider,
+					 const Ray& ray) const;
 	RHO__cuda virtual bool RayCastFull(RayCastDataVector& rcdv,
 									   const Ray& ray) const = 0;
 

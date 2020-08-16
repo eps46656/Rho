@@ -87,9 +87,9 @@ RayCastData DomainParallelotope::RayCast(const Ray& ray) const {
 	return RayCastData();
 }
 
-void DomainParallelotope::RayCastForRender(RayCastDataPair& rcdp,
-										   ComponentCollider* cmpt_collider,
-										   const Ray& ray) const {
+void DomainParallelotope::RayCastForRender(
+	RayCastDataPair& rcdp, const ComponentCollider* cmpt_collider,
+	const Ray& ray) const {
 	RayCastTemp rct;
 	if (!this->RayCast_(ray, rct)) { return; }
 

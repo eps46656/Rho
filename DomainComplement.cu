@@ -29,7 +29,7 @@ bool DomainComplement::Contain(const Num* root_point) const {
 #///////////////////////////////////////////////////////////////////////////////
 
 void DomainComplement::RayCastForRender(RayCastDataPair& rcdp,
-										ComponentCollider* cmpt_collider,
+										const ComponentCollider* cmpt_collider,
 										const Ray& ray) const {
 	RayCastDataCore* a[2]{ rcdp[0], rcdp[1] };
 

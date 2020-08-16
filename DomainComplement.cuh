@@ -26,7 +26,7 @@ public:
 
 	RHO__cuda RayCastData RayCast(const Ray& ray) const override;
 	RHO__cuda void RayCastForRender(RayCastDataPair& rcdp,
-									ComponentCollider* cmpt_collider,
+									const ComponentCollider* cmpt_collider,
 									const Ray& ray) const override;
 	RHO__cuda bool RayCastFull(RayCastDataVector& rcdv,
 							   const Ray& ray) const override;

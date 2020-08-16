@@ -23,9 +23,10 @@ RayCastData DomainUniverse::RayCast(const Ray& ray) const {
 	return RayCastData();
 }
 
-void DomainUniverse::RayCastForRender(RayCastDataPair& rcdp,
-									  ComponentCollider* cmpt_collider,
-									  const Ray& ray) const {
+void DomainUniverse::RayCastForRender(
+	RayCastDataPair& rcdp,
+	const ComponentCollider* cmpt_collider,
+	const Ray& ray) const {
 	return;
 }
 

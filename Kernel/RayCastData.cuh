@@ -1,7 +1,7 @@
 #ifndef RHO__define_guard__Kernel__RayCastData_cuh
 #define RHO__define_guard__Kernel__RayCastData_cuh
 
-#include"init.cuh"
+#include "init.cuh"
 
 namespace rho {
 
@@ -12,8 +12,8 @@ struct RayCastDataCore {
 		RHO__cuda Phase(int value = 0);
 		RHO__cuda Phase(bool fr, bool to);
 
-		RHO__cuda bool fr()const;
-		RHO__cuda bool to()const;
+		RHO__cuda bool fr() const;
+		RHO__cuda bool to() const;
 
 		RHO__cuda void fr(bool fr);
 		RHO__cuda void to(bool to);
@@ -23,11 +23,11 @@ struct RayCastDataCore {
 		RHO__cuda void reverse();
 	};
 
-	mutable const ComponentCollider* cmpt_collider;
-	mutable const Domain* domain;
+	const ComponentCollider* cmpt_collider;
+	const Domain* domain;
 
-	mutable Num t;
-	mutable Phase phase;
+	Num t;
+	Phase phase;
 
 	RHO__cuda virtual ~RayCastDataCore();
 };

@@ -65,7 +65,7 @@ bool DomainParallelotopeTiling::RayCastFull(RayCastDataVector& dst,
 }
 
 void DomainParallelotopeTiling::RayCastForRender(
-	RayCastDataPair& rcdp, ComponentCollider* cmpt_collider,
+	RayCastDataPair& rcdp, const ComponentCollider* cmpt_collider,
 	const Ray& ray) const {
 	Num t(this->RayCast_(ray));
 

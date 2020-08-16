@@ -25,7 +25,7 @@ RayCastData Domain::RayCast(const Ray& ray) const {
 }
 
 void Domain::RayCastForRender(RayCastDataPair& rcdp,
-							  ComponentCollider* cmpt_collider,
+							  const ComponentCollider* cmpt_collider,
 							  const Ray& ray) const {
 	RayCastDataVector rcdv;
 	this->RayCastFull(rcdv, ray);
