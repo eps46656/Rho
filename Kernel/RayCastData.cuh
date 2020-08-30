@@ -23,7 +23,6 @@ struct RayCastDataCore {
 		RHO__cuda void reverse();
 	};
 
-	const ComponentCollider* cmpt_collider;
 	const Domain* domain;
 
 	Num t;

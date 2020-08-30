@@ -47,6 +47,24 @@ RayCastData DomainParallelotopeTiling::RayCast(const Ray& ray) const {
 	return r;
 }
 
+void DomainParallelotopeTiling::RayCastPair(RayCastDataPair& rcdp,
+											const Ray& ray) const {
+	Num t(this->RayCast_(ray));
+
+	if (t.gt<0>() && t < rcdp[1]) {
+		auto rcd(New<RayCastDataCore>());
+		rcd->domain = this;
+		rcd->t = t;
+
+		if (t < rcdp[0]) {
+			rcdp[1] = Move(rcdp[0]);
+			rcdp[0] = rcd;
+		} else {
+			rcdp[1] = rcd;
+		}
+	}
+}
+
 bool DomainParallelotopeTiling::RayCastFull(RayCastDataVector& dst,
 											const Ray& ray) const {
 	Num t(this->RayCast_(ray));
@@ -62,26 +80,6 @@ bool DomainParallelotopeTiling::RayCastFull(RayCastDataVector& dst,
 	}
 
 	return false;
-}
-
-void DomainParallelotopeTiling::RayCastForRender(
-	RayCastDataPair& rcdp, const ComponentCollider* cmpt_collider,
-	const Ray& ray) const {
-	Num t(this->RayCast_(ray));
-
-	if (t.gt<0>() && t < rcdp[1]) {
-		auto rcd(New<RayCastDataCore>());
-		rcd->cmpt_collider = cmpt_collider;
-		rcd->domain = this;
-		rcd->t = t;
-
-		if (t < rcdp[0]) {
-			rcdp[1] = Move(rcdp[0]);
-			rcdp[0] = rcd;
-		} else {
-			rcdp[1] = rcd;
-		}
-	}
 }
 
 Num DomainParallelotopeTiling::RayCast_(const Ray& ray) const {

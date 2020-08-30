@@ -1,11 +1,9 @@
-#include"init.cuh"
+#include "init.cuh"
 
 namespace rho {
 
 class ForceField {
-
 public:
-
 	RHO__cuda ForceField();
 	RHO__cuda ForceField(Domain* domain);
 
@@ -13,7 +11,7 @@ public:
 
 #////////////////////////////////////////////////
 
-	RHO__cuda virtual Vector GetForce(const Vector& root_point)const = 0;
+	RHO__cuda virtual Vector GetForce(const Vector& root_point) const = 0;
 };
 
 }

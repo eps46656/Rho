@@ -1,21 +1,21 @@
-#include"define.cuh"
-#include"DomainSimplex.h"
+#include "define.cuh"
+#include "DomainSimplex.h"
 
-#define RHO__throw__local(description) \
+#define RHO__throw__local(description)                                         \
 	RHO__throw(DomainSimplex, __func__, description);
 
 namespace rho {
 
-DomainSimplex::DomainSimplex(Space* ref) :DomainSole(ref) {}
+DomainSimplex::DomainSimplex(Space* ref): DomainSole(ref) {}
 
 #////////////////////////////////////////////////
 
-void DomainSimplex::Refresh()const {}
-
-bool DomainSimplex::ReadyForRendering()const {
+bool DomainSimplex::ReFresh() const {
 	ContainFlag flag(0);
-	ContainFlag flag_end(1); --(flag <<= (this->dim_s() + 1));
-	ContainFlag reader_end(1); reader_end <<= this->dim_s();
+	ContainFlag flag_end(1);
+	--(flag <<= (this->dim_s() + 1));
+	ContainFlag reader_end(1);
+	reader_end <<= this->dim_s();
 
 	this->tod_matrix_.Resize(flag_end);
 
@@ -29,7 +29,7 @@ bool DomainSimplex::ReadyForRendering()const {
 
 		for (; reader != reader_end; reader <<= 1, a_i += this->dim_r()) {
 			if (!(flag & reader)) {
-				Memcpy(sizeof(Num)*this->dim_r(), m_i, a_i);
+				Memcpy(sizeof(Num) * this->dim_r(), m_i, a_i);
 				m_i += this->dim_r();
 			}
 		}
@@ -55,11 +55,9 @@ bool DomainSimplex::ReadyForRendering()const {
 
 #////////////////////////////////////////////////
 
-bool DomainSimplex::
-Contain_s(const Vector& point)const {
+bool DomainSimplex::Contain_s(const Vector& point) const {
 	RHO__debug_if(this->dim_s() != point.size() &&
 				  this->dim_r() != point.size()) {
-
 		RHO__throw__local("dim error");
 	}
 
@@ -80,11 +78,9 @@ Contain_s(const Vector& point)const {
 	return true;
 }
 
-bool DomainSimplex::
-EdgeContain_s(const Vector& point)const {
+bool DomainSimplex::EdgeContain_s(const Vector& point) const {
 	RHO__debug_if(this->dim_s() != point.size() &&
 				  this->dim_r() != point.size()) {
-
 		RHO__throw__local("dim error");
 	}
 
@@ -112,11 +108,9 @@ A:;
 	return r.le<1>();
 }
 
-bool DomainSimplex::
-FullContain_s(const Vector& point)const {
+bool DomainSimplex::FullContain_s(const Vector& point) const {
 	RHO__debug_if(this->dim_s() != point.size() &&
 				  this->dim_r() != point.size()) {
-
 		RHO__throw__local("dim error");
 	}
 
@@ -125,9 +119,7 @@ FullContain_s(const Vector& point)const {
 	Num r(Num::zero());
 	auto iter(point.begin());
 
-	for (auto end(point.begin() + this->dim_s());
-		 iter != end; ++iter) {
-
+	for (auto end(point.begin() + this->dim_s()); iter != end; ++iter) {
 		if (iter->lt<0>()) { return false; }
 		r += *iter;
 	}
@@ -135,17 +127,14 @@ FullContain_s(const Vector& point)const {
 	return r.lt<1>();
 }
 
-Domain::ContainType DomainSimplex::
-GetContainType_s(const Vector& point)const {
+Domain::ContainType DomainSimplex::GetContainType_s(const Vector& point) const {
 	RHO__debug_if(this->dim_s() != point.size() &&
 				  this->dim_r() != point.size()) {
-
 		RHO__throw__local("dim error");
 	}
 
 	if (this->dim_cr())
-		return this->Contain_s(point) ?
-		ContainType::edge : ContainType::none;
+		return this->Contain_s(point) ? ContainType::edge : ContainType::none;
 
 	Num r(Num::zero());
 	auto iter(point.begin());
@@ -169,11 +158,10 @@ A:;
 
 #////////////////////////////////////////////////
 
-DomainSimplex::ContainFlag DomainSimplex::
-GetContainFlag(const Vector& point) const {
+DomainSimplex::ContainFlag
+DomainSimplex::GetContainFlag(const Vector& point) const {
 	RHO__debug_if(this->dim_s() != point.size() &&
 				  this->dim_r() != point.size()) {
-
 		RHO__throw__local("dim error");
 	}
 
@@ -201,8 +189,7 @@ GetContainFlag(const Vector& point) const {
 
 #////////////////////////////////////////////////
 
-RayCastData DomainSimplex::
-RayCast(const Ray& ray)const {
+RayCastData DomainSimplex::RayCast(const Ray& ray) const {
 	auto rct(this->RayCast_(ray));
 
 	if (!rct) { return RayCastData(); }
@@ -214,7 +201,8 @@ RayCast(const Ray& ray)const {
 		rcd->root_point = ray.root_point(rct->t[0]);
 		rcd->contain_flag = rct->contain_flag[0];
 
-		Delete(rct); return RayCastData(rcd);
+		Delete(rct);
+		return RayCastData(rcd);
 	}
 
 	if (rct->t[1].ne<0>()) {
@@ -224,14 +212,15 @@ RayCast(const Ray& ray)const {
 		rcd->root_point = ray.root_point(rct->t[1]);
 		rcd->contain_flag = rct->contain_flag[1];
 
-		Delete(rct); return RayCastData(rcd);
+		Delete(rct);
+		return RayCastData(rcd);
 	}
 
-	Delete(rct); return RayCastData();
+	Delete(rct);
+	return RayCastData();
 }
 
-cntr::Vector<RayCastData> DomainSimplex::
-RayCastFull(const Ray& ray)const {
+cntr::Vector<RayCastData> DomainSimplex::RayCastFull(const Ray& ray) const {
 	RayCastTemp* rct(this->RayCast_(ray));
 
 	cntr::Vector<RayCastData> r;
@@ -258,14 +247,13 @@ RayCastFull(const Ray& ray)const {
 		r.Push(rcd);
 	}
 
-	Delete(rct); return r;
+	Delete(rct);
+	return r;
 }
 
-void DomainSimplex::RayCastForRender(
-	pair<RayCastData>& rcd_p,
-	ComponentCollider* cmpt_collider,
-	const Ray& ray)const {
-
+void DomainSimplex::RayCastForRender(pair<RayCastData>& rcd_p,
+									 ComponentCollider* cmpt_collider,
+									 const Ray& ray) const {
 	RayCastTemp* rct(this->RayCast_(ray));
 
 	if (!rct) { return; }
@@ -310,18 +298,15 @@ void DomainSimplex::RayCastForRender(
 
 #////////////////////////////////////////////////
 
-bool DomainSimplex::IsTanVector(
-	const Vector& root_point, const Vector& root_vector)const {
-
+bool DomainSimplex::IsTanVector(const Vector& root_point,
+								const Vector& root_vector) const {
 	RHO__debug_if(this->dim_r() != root_point.size() ||
 				  this->dim_r() != root_vector.size()) {
-
 		RHO__throw__local("dim error");
 	}
 
 	Vector point(this->dim_r());
-	this->ref()->MapPointFromRoot_rr(
-		point.begin(), root_point.begin());
+	this->ref()->MapPointFromRoot_rr(point.begin(), root_point.begin());
 
 	auto contain_flag(this->GetContainFlag(root_point));
 
@@ -333,12 +318,15 @@ bool DomainSimplex::IsTanVector(
 
 #////////////////////////////////////////////////
 
-DomainSimplex::RayCastTemp* DomainSimplex::
-RayCast_(const Ray& ray) const {
+DomainSimplex::RayCastTemp* DomainSimplex::RayCast_(const Ray& ray) const {
 	RHO__debug_if(this->root() != ray.root())
 		RHO__throw__local("root space error");
 
-#define RHO__fail {Delete(rct); return nullptr; }
+#define RHO__fail                                                              \
+	{                                                                          \
+		Delete(rct);                                                           \
+		return nullptr;                                                        \
+	}
 
 	auto rct(New<RayCastTemp>());
 
@@ -348,11 +336,9 @@ RayCast_(const Ray& ray) const {
 	auto origin_i(rct->origin.begin());
 	auto direct_i(rct->direct.begin());
 
-	this->ref()->MapPointFromRoot_rr(
-		origin_i, ray.root_origin_r().begin());
+	this->ref()->MapPointFromRoot_rr(origin_i, ray.root_origin_r().begin());
 
-	this->ref()->MapVectorFromRoot_rr(
-		direct_i, ray.root_direct_r().begin());
+	this->ref()->MapVectorFromRoot_rr(direct_i, ray.root_direct_r().begin());
 
 	rct->t[0] = Num::zero();
 	rct->t[1] = Num::inf();
@@ -364,9 +350,8 @@ RayCast_(const Ray& ray) const {
 		origin_i += this->dim_s();
 		direct_i += this->dim_s();
 
-		for (auto end(rct->origin.end());
-			 origin_i != end; ++origin_i, ++direct_i) {
-
+		for (auto end(rct->origin.end()); origin_i != end;
+			 ++origin_i, ++direct_i) {
 			if (direct_i->eq<0>()) {
 				if (origin_i->ne<0>()) { RHO__fail }
 				continue;
@@ -389,9 +374,8 @@ RayCast_(const Ray& ray) const {
 
 	ContainFlag writer(1);
 
-	for (ContainFlag end(ContainFlag(1) << this->dim_s());
-		 writer != end; writer <<= 1, ++origin_i, ++direct_i) {
-
+	for (ContainFlag end(ContainFlag(1) << this->dim_s()); writer != end;
+		 writer <<= 1, ++origin_i, ++direct_i) {
 		if (direct_i->eq<0>()) {
 			if (origin_i->lt<0>() || origin_i->gt<1>()) { RHO__fail }
 			continue;
@@ -451,14 +435,14 @@ RayCast_(const Ray& ray) const {
 
 #////////////////////////////////////////////////
 
-TodData DomainSimplex::
-Tod(const RayCastData& rcd, const Vector& root_direct)const {
+TodData DomainSimplex::Tod(const RayCastData& rcd,
+						   const Vector& root_direct) const {
 	TodData r;
 
-	r.orth = root_direct -
+	r.orth =
+		root_direct -
 		(r.tan = root_direct *
-		 this->tod_matrix_[
-			 rcd.Get<RayCastDataCore_*>()->contain_flag]);
+				 this->tod_matrix_[rcd.Get<RayCastDataCore_*>()->contain_flag]);
 
 	return r;
 }

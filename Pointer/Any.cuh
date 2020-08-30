@@ -1,13 +1,12 @@
 #ifndef RHO__define_guard__Pointer__Any_cuh
 #define RHO__define_guard__Pointer__Any_cuh
 
-#include"../Base/memory.cuh"
+#include "../Base/memory.cuh"
 
 namespace rho {
 namespace ptr {
 
 class Any {
-
 private:
 	struct CoreBase {
 		void* ptr;
@@ -16,21 +15,18 @@ private:
 		RHO__cuda virtual void Copy(void* ptr) = 0;
 	};
 
-	template<typename T>
-	struct Core :public CoreBase {
-		RHO__cuda void Free()override
-		{ Delete(static_cast<T*>(this->ptr)); }
+	template<typename T> struct Core: public CoreBase {
+		RHO__cuda void Free() override { Delete(static_cast<T*>(this->ptr)); }
 
-		RHO__cuda void Copy(void* ptr)override
-		{ new(ptr) Core(); }
+		RHO__cuda void Copy(void* ptr) override { new (ptr) Core(); }
 	};
 
 public:
 	RHO__cuda Any() { this->core_.ptr = nullptr; }
 
-	template<typename T>
-	RHO__cuda explicit Any(T* ptr)
-	{ (new(&this->core_) Core<T>())->ptr = ptr; }
+	template<typename T> RHO__cuda explicit Any(T* ptr) {
+		(new (&this->core_) Core<T>())->ptr = ptr;
+	}
 
 	RHO__cuda inline Any(Any&& any) {
 		any.core_.Copy(&this->core_);
@@ -38,20 +34,17 @@ public:
 		any.core_.ptr = nullptr;
 	}
 
-	RHO__cuda inline ~Any()
-	{ static_cast<CoreBase&>(this->core_).Free(); }
+	RHO__cuda inline ~Any() { static_cast<CoreBase&>(this->core_).Free(); }
 
 #////////////////////////////////////////////////
 
-	RHO__cuda inline operator bool()const
-	{ return this->core_.ptr; }
+	RHO__cuda inline operator bool() const { return this->core_.ptr; }
 
 #////////////////////////////////////////////////
 
-	template<typename T>
-	RHO__cuda inline Any& operator=(T* ptr) {
+	template<typename T> RHO__cuda inline Any& operator=(T* ptr) {
 		static_cast<CoreBase&>(this->core_).Free();
-		(new(&this->core_) Core<T>())->ptr = ptr;
+		(new (&this->core_) Core<T>())->ptr = ptr;
 
 		return *this;
 	}
@@ -76,12 +69,11 @@ public:
 
 #////////////////////////////////////////////////
 
-	template<typename T>
-	RHO__cuda inline T* Get()const
-	{ return static_cast<T*>(this->core_.ptr); }
+	template<typename T> RHO__cuda inline T* Get() const {
+		return static_cast<T*>(this->core_.ptr);
+	}
 
-	template<typename T>
-	RHO__cuda inline T* Release() {
+	template<typename T> RHO__cuda inline T* Release() {
 		T* r(static_cast<T*>(this->core_.ptr));
 		this->core_.ptr = nullptr;
 		return r;

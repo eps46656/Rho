@@ -1,4 +1,4 @@
-﻿#ifndef RHO__define_guard__Kernel__init_cuh
+#ifndef RHO__define_guard__Kernel__init_cuh
 #define RHO__define_guard__Kernel__init_cuh
 
 #include "../define.cuh"

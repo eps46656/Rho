@@ -8,7 +8,7 @@ namespace rho {
 
 class DomainSole: public Domain {
 public:
-	RHO__cuda Space* root()const override;
+	RHO__cuda Space* root() const override;
 	RHO__cuda Space* ref() const;
 
 	RHO__cuda dim_t dim_s() const;

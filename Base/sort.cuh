@@ -22,9 +22,9 @@ RHO__cuda size_t Count(Iterator begin, Iterator end) {
 }
 
 template<typename Iterator, typename T,
-	typename Compare = op::eq<decltype(*declval<Iterator>()), const T&>>
-RHO__cuda size_t Count(
-	Iterator begin, Iterator end, const T& value, Compare compare = Compare()) {
+		 typename Compare = op::eq<decltype(*declval<Iterator>()), const T&>>
+RHO__cuda size_t Count(Iterator begin, Iterator end, const T& value,
+					   Compare compare = Compare()) {
 	size_t r(0);
 
 	for (; begin != end; ++begin) {
@@ -35,9 +35,9 @@ RHO__cuda size_t Count(
 }
 
 template<typename Iterator,
-	typename Compare = op::lt<RmRef_t<decltype(*declval<Iterator>())>>>
-RHO__cuda Iterator Max(
-	Iterator begin, Iterator end, Compare compare = Compare()) {
+		 typename Compare = op::lt<RmRef_t<decltype(*declval<Iterator>())>>>
+RHO__cuda Iterator Max(Iterator begin, Iterator end,
+					   Compare compare = Compare()) {
 	if (begin == end) { return end; }
 
 	Iterator r(begin);
@@ -52,9 +52,9 @@ RHO__cuda Iterator Max(
 #///////////////////////////////////////////////////////////////////////////////
 
 template<typename Src,
-	typename Compare = op::lt<RmRef_t<decltype(declval<Src>()[0])>>>
-RHO__cuda void InsertionSort(
-	size_t size, Src&& src, Compare compare = Compare()) {
+		 typename Compare = op::lt<RmRef_t<decltype(declval<Src>()[0])>>>
+RHO__cuda void InsertionSort(size_t size, Src&& src,
+							 Compare compare = Compare()) {
 	using T = RmRef_t<decltype(src[0])>;
 
 	if (size < 2) { return; }
@@ -81,9 +81,9 @@ RHO__cuda void InsertionSort(
 }
 
 template<typename Iterator,
-	typename Compare = op::lt<RmRef_t<decltype(*declval<Iterator>())>>>
-RHO__cuda void InsertionSort(
-	Iterator begin, Iterator end, Compare compare = Compare()) {
+		 typename Compare = op::lt<RmRef_t<decltype(*declval<Iterator>())>>>
+RHO__cuda void InsertionSort(Iterator begin, Iterator end,
+							 Compare compare = Compare()) {
 	using T = RmRef_t<decltype(*begin)>;
 
 	if (begin == end) { return; }
@@ -116,13 +116,13 @@ RHO__cuda void InsertionSort(
 }
 
 template<typename Iterator,
-	typename Compare = op::lt<RmRef_t<decltype(*declval<Iterator>())>>>
+		 typename Compare = op::lt<RmRef_t<decltype(*declval<Iterator>())>>>
 RHO__cuda void Sort(Iterator begin, Iterator end, Compare compare = Compare()) {
 	InsertionSort(begin, end, compare);
 }
 
 template<typename Src,
-	typename Compare = op::lt<RmRef_t<decltype(declval<Src&&>()[0])>>>
+		 typename Compare = op::lt<RmRef_t<decltype(declval<Src&&>()[0])>>>
 RHO__cuda void Sort(size_t size, Src&& src, Compare compare = Compare()) {
 	InsertionSort(size, Forward<Src>(src), compare);
 }

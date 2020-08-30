@@ -87,9 +87,8 @@ RayCastData DomainParallelotope::RayCast(const Ray& ray) const {
 	return RayCastData();
 }
 
-void DomainParallelotope::RayCastForRender(
-	RayCastDataPair& rcdp, const ComponentCollider* cmpt_collider,
-	const Ray& ray) const {
+void DomainParallelotope::RayCastPair(RayCastDataPair& rcdp,
+									  const Ray& ray) const {
 	RayCastTemp rct;
 	if (!this->RayCast_(ray, rct)) { return; }
 
@@ -97,7 +96,6 @@ void DomainParallelotope::RayCastForRender(
 		if (rcdp[1] < rct.t[0]) { return; }
 
 		auto rcd(New<RayCastDataCore_>());
-		rcd->cmpt_collider = cmpt_collider;
 		rcd->domain = this;
 		rcd->t = rct.t[0];
 		rcd->phase.set(false, rct.t[0] != rct.t[1]);
@@ -114,7 +112,6 @@ void DomainParallelotope::RayCastForRender(
 
 	if (rct.t[0] != rct.t[1] && rct.t[1] < rcdp[1]) {
 		auto rcd(New<RayCastDataCore_>());
-		rcd->cmpt_collider = cmpt_collider;
 		rcd->domain = this;
 		rcd->t = rct.t[1];
 		rcd->phase.set(true, false);
@@ -140,7 +137,6 @@ bool DomainParallelotope::RayCastFull(RayCastDataVector& dst,
 			rcd->t = rct.t[0];
 			rcd->phase.set(false, rct.t[0] != rct.t[1]);
 			rcd->contain_flag = rct.contain_flag[0];
-
 			dst.Push(rcd);
 		}
 
@@ -150,7 +146,6 @@ bool DomainParallelotope::RayCastFull(RayCastDataVector& dst,
 			rcd->t = rct.t[1];
 			rcd->phase.set(true, false);
 			rcd->contain_flag = rct.contain_flag[1];
-
 			dst.Push(rcd);
 		}
 	}
@@ -226,5 +221,4 @@ void DomainParallelotope::GetTodTan(Num* dst, const RayCastData& rcd,
 size_t DomainParallelotope::Complexity() const {
 	return 10 * this->dim_s() + 5 * this->dim_cr();
 }
-
 }

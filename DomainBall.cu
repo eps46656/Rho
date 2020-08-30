@@ -57,9 +57,7 @@ RayCastData DomainBall::RayCast(const Ray& ray) const {
 	return RayCastData();
 }
 
-void DomainBall::RayCastForRender(RayCastDataPair& rcdp,
-								  const ComponentCollider* cmpt_collider,
-								  const Ray& ray) const {
+void DomainBall::RayCastPair(RayCastDataPair& rcdp, const Ray& ray) const {
 	RayCastTemp rct;
 	if (!this->RayCast_(ray, rct)) { return; }
 
@@ -67,7 +65,6 @@ void DomainBall::RayCastForRender(RayCastDataPair& rcdp,
 		if (rcdp[1] < rct.t[0]) { return; }
 
 		auto rcd(New<RayCastDataCore_>());
-		rcd->cmpt_collider = cmpt_collider;
 		rcd->domain = this;
 		rcd->t = rct.t[0];
 		rcd->phase.set(false, rct.t[0] != rct.t[1]);
@@ -84,7 +81,6 @@ void DomainBall::RayCastForRender(RayCastDataPair& rcdp,
 
 	if (rct.t[0] != rct.t[1] && rct.t[1] < rcdp[1]) {
 		auto rcd(New<RayCastDataCore_>());
-		rcd->cmpt_collider = cmpt_collider;
 		rcd->domain = this;
 		rcd->t = rct.t[1];
 		rcd->phase.set(true, false);

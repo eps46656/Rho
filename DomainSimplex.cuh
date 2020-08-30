@@ -41,10 +41,8 @@ public:
 #///////////////////////////////////////////////////////////////////////////////
 
 	RayCastData RayCast(const Ray& ray) const override;
-	cntr::Vector<RayCastData> RayCastFull(const Ray& ray) const override;
-	void RayCastForRender(pair<RayCastData>& rcd_p,
-						  ComponentCollider* cmpt_collider,
-						  const Ray& ray) const override;
+	bool RayCastFull(RayCastDataVector& dst, const Ray& ray) const override;
+	void RayCastPair(pair<RayCastData>& rcd_p, const Ray& ray) const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 

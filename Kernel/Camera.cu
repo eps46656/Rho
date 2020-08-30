@@ -172,11 +172,9 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 	RayCastDataPair rcdp;
 	Vec point[2];
 
-	ComponentCollider* collider_a;
-	ComponentCollider* collider_b;
+	ComponentCollider* collider[3];
 
-	const ComponentCollider::Material* material_a;
-	const ComponentCollider::Material* material_b;
+	const ComponentCollider::Material* material[2];
 
 	Texture::Data texture_data;
 
@@ -191,7 +189,7 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 	size_t task_size(0);
 	cntr::BidirectionalNode task_node;
 
-#define RHO__static_task_size 5
+#define RHO__static_task_size 10
 
 	Camera::Task static_task[RHO__static_task_size];
 	// this task is to avoid using New<Camera::Task>()
@@ -259,8 +257,27 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 		// every point between the first and second hit points is
 		// in the material b
 
-		task->ray.RayCastForRender(rcdp,
-								   camera->cmpt_collider__ray_cast_order_);
+		rcdp[0] = nullptr;
+		rcdp[1] = nullptr;
+		collider[2] = nullptr;
+
+		{
+			Num pre_t(-1);
+
+			for (size_t i(0);
+				 i != camera->cmpt_collider__ray_cast_order_.size(); ++i) {
+				camera->cmpt_collider__ray_cast_order_[i]
+					->domain()
+					->RayCastPair(rcdp, task->ray);
+
+				if (rcdp[0]) {
+					if (pre_t != rcdp[0]->t) {
+						pre_t = rcdp[0]->t;
+						collider[2] = camera->cmpt_collider__ray_cast_order_[i];
+					}
+				}
+			}
+		}
 
 		if (!rcdp[0]) {
 			/*goto function_head; */
@@ -278,22 +295,22 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 
 		task->ray.point(temp, rcdp[0]->t / 2);
 
-		collider_a = nullptr;
+		collider[0] = nullptr;
 
 		for (size_t i(0); i != camera->cmpt_collider__detect_order_.size();
 			 ++i) {
 			if (camera->cmpt_collider__detect_order_[i]->Contain(temp)) {
-				collider_a = camera->cmpt_collider__detect_order_[i];
+				collider[0] = camera->cmpt_collider__detect_order_[i];
 				break;
 			}
 		}
 
-		material_a = collider_a ? &collider_a->material()
-								: &camera->void_cmpt_collider_material();
+		material[0] = collider[0] ? &collider[0]->material()
+								  : &camera->void_cmpt_collider_material();
 
-		// get collider_a
+		// get collider[0]
 
-		// if collider_a is exist
+		// if collider[0] is exist
 		// get material from its object
 
 		// if not
@@ -307,9 +324,9 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 
 		dist_sq = sq(task->dist += d_dist);
 
-		task->decay[0] *= pow(material_a->transmittance[0], d_dist);
-		task->decay[1] *= pow(material_a->transmittance[1], d_dist);
-		task->decay[2] *= pow(material_a->transmittance[2], d_dist);
+		task->decay[0] *= pow(material[0]->transmittance[0], d_dist);
+		task->decay[1] *= pow(material[0]->transmittance[1], d_dist);
+		task->decay[2] *= pow(material[0]->transmittance[2], d_dist);
 
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
@@ -321,8 +338,7 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 		for (dim_t i(0); i != RHO__max_dim; ++i)
 			tod.orth[i] = task->ray.direct[i] - tod.tan[i];
 
-		texture_data =
-			rcdp[0]->cmpt_collider->texture()->GetData(point[0], tod.tan);
+		texture_data = collider[2]->texture()->GetData(point[0], tod.tan);
 
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
@@ -338,23 +354,24 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 			task->ray.point(temp, rcdp[1] ? ((rcdp[0]->t + rcdp[1]->t) / 2)
 										  : (rcdp[0]->t + 1));
 
-			collider_b = nullptr;
+			collider[1] = nullptr;
 
 			for (size_t i(0); i != camera->cmpt_collider__detect_order_.size();
 				 ++i) {
 				if (camera->cmpt_collider__detect_order_[i]->Contain(temp)) {
-					collider_b = camera->cmpt_collider__detect_order_[i];
+					collider[1] = camera->cmpt_collider__detect_order_[i];
 					break;
 				}
 			}
 
-			material_b = collider_b ? &collider_b->material()
-									: &camera->void_cmpt_collider_material();
+			material[1] = collider[1] ? &collider[1]->material()
+									  : &camera->void_cmpt_collider_material();
 
-			if (material_b->transmittance[0].ne<0>() ||
-				material_b->transmittance[1].ne<0>() ||
-				material_b->transmittance[2].ne<0>()) {
-				RefractionData refraction(rcdp[0], tod, material_a, material_b);
+			if (material[1]->transmittance[0].ne<0>() ||
+				material[1]->transmittance[1].ne<0>() ||
+				material[1]->transmittance[2].ne<0>()) {
+				RefractionData refraction(rcdp[0], tod, material[0],
+										  material[1]);
 
 				if (refraction.transmittance.eq<0>()) {
 					reflectance[0] += transmittance[0];

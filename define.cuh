@@ -86,10 +86,9 @@ namespace rho {
 using nullptr_t = decltype(nullptr);
 using size_t = decltype(sizeof(char));
 using diff_t = decltype((char*)(0) - (char*)(0));
-using uint_t = unsigned int;
-using double_t = double;
 using dim_t = unsigned int;
 using id_t = unsigned int;
+using double_t = double;
 
 #///////////////////////////////////////////////////////////////////////////////
 

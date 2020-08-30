@@ -10,8 +10,6 @@ public:
 	struct RayCastTemp {
 		RayCastDataVector rcdv_a;
 		RayCastDataVector rcdv_b;
-		cntr::Vector<pair<RayCastData*, RayCastDataCore::Phase>> rcdv_a_;
-		cntr::Vector<pair<RayCastData*, RayCastDataCore::Phase>> rcdv_b_;
 	};
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -41,11 +39,9 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	// RHO__cuda bool RayCastB(const Ray& ray)const override;
 	RHO__cuda RayCastData RayCast(const Ray& ray) const override;
-	RHO__cuda void RayCastForRender(RayCastDataPair& rcdp,
-									const ComponentCollider* cmpt_collider,
-									const Ray& ray) const override;
+	RHO__cuda void RayCastPair(RayCastDataPair& rcdp,
+							   const Ray& ray) const override;
 	RHO__cuda bool RayCastFull(RayCastDataVector& dst,
 							   const Ray& ray) const override;
 

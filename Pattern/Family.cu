@@ -1,4 +1,4 @@
-#include"Family.cuh"
+#include "Family.cuh"
 
 namespace rho {
 namespace pattern {
@@ -9,22 +9,21 @@ Family* Family::child_end() { return this; }
 Family* Family::descendant_begin() { return this->next_descendant(); }
 Family* Family::descendant_end() { return this->parent; }
 
-const Family* Family::child_begin()const { return this->next_child; }
-const Family* Family::child_end()const { return this; }
+const Family* Family::child_begin() const { return this->next_child; }
+const Family* Family::child_end() const { return this; }
 
-const Family* Family::descendant_begin()const { return this->next_descendant(); }
-const Family* Family::descendant_end()const { return this->parent; }
+const Family* Family::descendant_begin() const {
+	return this->next_descendant();
+}
+const Family* Family::descendant_end() const { return this->parent; }
 
 #////////////////////////////////////////////////
 
-Family::Family() :
-	parent(nullptr),
-	prev_sibling(nullptr), next_sibling(nullptr),
+Family::Family():
+	parent(nullptr), prev_sibling(nullptr), next_sibling(nullptr),
 	prev_child(this), next_child(this) {}
 
-Family::Family(Family* p) :
-	parent(p), prev_child(this), next_child(this) {
-
+Family::Family(Family* p): parent(p), prev_child(this), next_child(this) {
 	if (p == p->prev_child) {
 		this->prev_sibling = this->next_sibling = p;
 		p->prev_child = p->next_child = this;
@@ -47,14 +46,14 @@ Family* Family::next_descendant() {
 	Family* n(this);
 	Family* m(this->next_sibling);
 
-	while (m && n == m->prev_child)
-		m = (n = m)->next_sibling;
+	while (m && n == m->prev_child) m = (n = m)->next_sibling;
 
 	return m;
 }
 
-const Family* Family::next_descendant()const
-{ return const_cast<Family*>(this)->next_descendant(); }
+const Family* Family::next_descendant() const {
+	return const_cast<Family*>(this)->next_descendant();
+}
 
 #////////////////////////////////////////////////
 
@@ -84,7 +83,8 @@ Family* Family::Pop() {
 	if (this->parent) {
 		if (this->parent == this->prev_sibling) {
 			if (this->parent == this->next_sibling) {
-				this->parent->prev_child = this->parent->next_child = this->parent;
+				this->parent->prev_child = this->parent->next_child =
+					this->parent;
 			} else {
 				this->parent->next_child = this->next_sibling;
 				this->next_sibling->prev_sibling = this->parent;

@@ -1,7 +1,7 @@
 #ifndef RHO__define_guard__Pattern__Family_cuh
 #define RHO__define_guard__Pattern__Family_cuh
 
-#include"../define.cuh"
+#include "../define.cuh"
 
 namespace rho {
 namespace pattern {
@@ -23,16 +23,16 @@ struct Family {
 	RHO__cuda Family* descendant_begin();
 	RHO__cuda Family* descendant_end();
 
-	RHO__cuda const Family* child_begin()const;
-	RHO__cuda const Family* child_end()const;
+	RHO__cuda const Family* child_begin() const;
+	RHO__cuda const Family* child_end() const;
 
-	RHO__cuda const Family* descendant_begin()const;
-	RHO__cuda const Family* descendant_end()const;
+	RHO__cuda const Family* descendant_begin() const;
+	RHO__cuda const Family* descendant_end() const;
 
 #////////////////////////////////////////////////
 
 	RHO__cuda Family* next_descendant();
-	RHO__cuda const Family* next_descendant()const;
+	RHO__cuda const Family* next_descendant() const;
 
 #////////////////////////////////////////////////
 

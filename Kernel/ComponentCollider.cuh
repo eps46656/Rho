@@ -42,12 +42,6 @@ public:
 
 	RHO__cuda virtual bool Contain(const Num* point) const;
 
-	RHO__cuda virtual RayCastData RayCast(const Ray& ray) const;
-	RHO__cuda virtual bool RayCastFull(RayCastDataVector& rcdv,
-									   const Ray& ray) const;
-	RHO__cuda virtual void RayCastForRender(RayCastDataPair& rcdp,
-											const Ray& ray) const;
-
 private:
 	const Domain* domain_;
 	Material material_;

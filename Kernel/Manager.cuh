@@ -1,4 +1,4 @@
-﻿#if false
+#if false
 
 #ifndef RHO__define_guard__Kernel__Manager_cuh
 #define RHO__define_guard__Kernel__Manager_cuh

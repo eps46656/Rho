@@ -1,13 +1,12 @@
 #ifndef RHO__define_guard__Kernel__TextureSolid_cuh
 #define RHO__define_guard__Kernel__TextureSolid_cuh
 
-#include"init.cuh"
-#include"Texture.cuh"
+#include "init.cuh"
+#include "Texture.cuh"
 
 namespace rho {
 
-class TextureSolid :public Texture {
-
+class TextureSolid: public Texture {
 public:
 	Data data;
 
@@ -18,12 +17,12 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda bool Refresh()const override;
+	RHO__cuda bool Refresh() const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda Data GetData(const Num* root_point,
-						   const Num* tod_tan)const override;
+						   const Num* tod_tan) const override;
 };
 
 }

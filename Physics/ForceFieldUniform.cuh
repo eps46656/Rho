@@ -1,9 +1,8 @@
-#include"ForceField.cuh"
+#include "ForceField.cuh"
 
 namespace rho {
 
-class ForceFieldUniform :public ForceField {
-
+class ForceFieldUniform: public ForceField {
 public:
 	Vector force;
 
@@ -14,7 +13,7 @@ public:
 
 #////////////////////////////////////////////////
 
-	RHO__cuda Vector GetForce(const Vector& root_point)const override;
+	RHO__cuda Vector GetForce(const Vector& root_point) const override;
 };
 
 }
