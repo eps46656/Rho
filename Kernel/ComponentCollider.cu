@@ -13,20 +13,36 @@ bool ComponentCollider::Material::Check() const {
 		   this->transmittance[2].le<1>();
 }
 
-void ComponentCollider::Material::SetDefault() {
+ComponentCollider::Material* ComponentCollider::Material::set_default() {
 	this->refraction_index = 1;
 	this->transmittance[0] = 0;
 	this->transmittance[1] = 0;
 	this->transmittance[2] = 0;
+	return this;
 }
 
-void ComponentCollider::Material::Set(Num refration_index, Num transmittance_0,
-									  Num transmittance_1,
-									  Num transmittance_2) {
+ComponentCollider::Material*
+ComponentCollider::Material::set(Num refration_index, Num transmittance_0,
+								 Num transmittance_1, Num transmittance_2) {
 	this->refraction_index = refraction_index;
 	this->transmittance[0] = transmittance_0;
 	this->transmittance[1] = transmittance_1;
 	this->transmittance[2] = transmittance_2;
+	return this;
+}
+
+ComponentCollider::Material*
+ComponentCollider::Material::set_refraction_index(Num refration_index) {
+	this->refraction_index = refraction_index;
+	return this;
+}
+
+ComponentCollider::Material* ComponentCollider::Material::set_transmittance(
+	Num transmittance_0, Num transmittance_1, Num transmittance_2) {
+	this->transmittance[0] = transmittance_0;
+	this->transmittance[1] = transmittance_1;
+	this->transmittance[2] = transmittance_2;
+	return this;
 }
 
 #///////////////////////////////////////////////////////////////////////////////

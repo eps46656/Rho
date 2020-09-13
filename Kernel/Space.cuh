@@ -179,8 +179,34 @@ public:
 	RHO__cuda Space* SetOrigin(const Num* origin);
 	RHO__cuda Space* SetAxis(const Num* axis);
 
-	RHO__cuda Space* EnumSetOrigin(const cntr::EnumerateVector<Num>& origin);
-	RHO__cuda Space* EnumSetAxis(const cntr::EnumerateVector<Num>& axis);
+	template<typename... Args> RHO__cuda Space* EnumSetOrigin(Args&&... args) {
+		RHO__debug_if(sizeof...(args) != this->dim_p_) {
+			RHO__throw(Space, __func__, "dim error");
+		}
+
+		Assign<sizeof...(args)>(this->origin_, Forward<Args>(args)...);
+		this->latest_ = false;
+
+		return this;
+	}
+
+	template<typename... Args> RHO__cuda Space* EnumSetAxis(Args&&... args) {
+		RHO__debug_if(sizeof...(args) != this->dim_s_ * this->dim_p_) {
+			RHO__throw(Space, __func__, "dim error");
+		}
+
+		Num axis[sizeof...(args)];
+		Assign<sizeof...(args)>(axis, Forward<Args>(args)...);
+
+		for (size_t i(0); i != sizeof...(args); ++i) {
+			size_t a(i / this->dim_p_);
+			this->axis_[RHO__max_dim * a + i - a * this->dim_p_] = axis[i];
+		}
+
+		this->latest_ = false;
+
+		return this;
+	}
 
 	RHO__cuda Space* SetOrigin(const Vector& origin);
 	RHO__cuda Space* SetAxis(const Matrix& axis);

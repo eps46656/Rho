@@ -88,8 +88,9 @@ RHO__glb void CameraRenderReady_(const Camera* camera, size_t size) {
 
 		size_t size(camera->cmpt_collider__ray_cast_order_.size());
 
-		RHO__debug_if(size != camera->cmpt_collider__detect_order_.size())
+		RHO__debug_if(size != camera->cmpt_collider__detect_order_.size()) {
 			RHO__throw__local("size error");
+		}
 
 		cntr::Vector<ComponentCollider*> temp(
 			camera->cmpt_collider__ray_cast_order_);
@@ -101,8 +102,9 @@ RHO__glb void CameraRenderReady_(const Camera* camera, size_t size) {
 				RHO__throw__local("not found error");
 			}
 
-			if (!camera->cmpt_collider__detect_order_[i]->Refresh())
+			if (!camera->cmpt_collider__detect_order_[i]->Refresh()) {
 				RHO__throw__local("refresh error");
+			}
 		}
 
 		Sort(camera->cmpt_collider__ray_cast_order_.begin(),
@@ -114,14 +116,16 @@ RHO__glb void CameraRenderReady_(const Camera* camera, size_t size) {
 
 	{
 		for (size_t i(0); i != camera->cmpt_light_.size(); ++i) {
-			if (!camera->cmpt_light_[i]->Refresh())
+			if (!camera->cmpt_light_[i]->Refresh()) {
 				RHO__throw__local("refresh error");
+			}
 		}
 	}
 
 	{
-		RHO__debug_if(!camera->void_cmpt_collider_material_.Check())
+		RHO__debug_if(!camera->void_cmpt_collider_material_.Check()) {
 			RHO__throw__local("material error");
+		}
 	}
 
 #///////////////////////////////////////////////////////////////////////////////

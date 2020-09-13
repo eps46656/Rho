@@ -25,7 +25,7 @@ using priority_t = size_t;
 
 template<typename T, size_t N> using Array_t = cntr::Array<T, N>;
 
-using Num3 = Array_t<Num, 3>;
+using Num3 = cntr::Array<Num, 3>;
 
 template<typename T, typename Compare = op::lt<T>>
 using RBT = cntr::RedBlackTree<T, Compare>;

@@ -12,27 +12,27 @@
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 
-#define RHO__debug_flag true
+#define RHO__debug_flag false
 
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 
 #if RHO__debug_flag
-#define RHO__debug if constexpr (true)
-#define RHO__debug_if(x) if (x)
+	#define RHO__debug if constexpr (true)
+	#define RHO__debug_if(x) if (x)
 
-#define RHO__throw__(type, func, desc)                                         \
-	{                                                                          \
-		rho::Print() << __LINE__ << "\n"                                       \
-					 << type << "::" << func << "\n\t" << desc;                \
-		assert(false);                                                         \
-	}
+	#define RHO__throw__(type, func, desc)                                     \
+		{                                                                      \
+			rho::Print() << __LINE__ << "\n"                                   \
+						 << type << "::" << func << "\n\t" << desc;            \
+			assert(false);                                                     \
+		}
 #else
-#define RHO__debug if constexpr (false)
-#define RHO__debug_if(x) if (false)
+	#define RHO__debug if constexpr (false)
+	#define RHO__debug_if(x) if (false)
 
-#define RHO__throw__(type, func, desc) ;
+	#define RHO__throw__(type, func, desc) ;
 #endif
 
 #define RHO__throw_(type, func, desc) RHO__throw__(#type, func, desc)

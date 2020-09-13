@@ -121,6 +121,3 @@ private:
 }
 
 #endif
-
-// large scale c++ software design
-// pearson

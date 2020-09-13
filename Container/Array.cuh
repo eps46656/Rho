@@ -11,6 +11,14 @@ template<typename T, size_t N> struct Array {
 
 #///////////////////////////////////////////////////////////////////////////////
 
+	template<typename... Args> RHO__cuda static Array Make(Args&&... args) {
+		Array r;
+		rho::Assign<N>(r, Forward<Args>(args)...);
+		return r;
+	}
+
+#///////////////////////////////////////////////////////////////////////////////
+
 	RHO__cuda Array() {}
 
 	template<typename Src> RHO__cuda Array(Src&& src) { *this = src; }
@@ -23,8 +31,12 @@ template<typename T, size_t N> struct Array {
 #///////////////////////////////////////////////////////////////////////////////
 
 	template<typename Src> RHO__cuda Array& operator=(Src&& src) {
-		rho::Copy<N>(this->value, Forward<Src>(src));
+		Copy<N>(this->value, Forward<Src>(src));
 		return *this;
+	}
+
+	template<typename... Args> RHO__cuda void Assign(Args&&... args) {
+		rho::Assign<N>(this->value, Forward<Args>(args)...);
 	}
 
 #///////////////////////////////////////////////////////////////////////////////

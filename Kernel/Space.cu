@@ -348,26 +348,6 @@ Space* Space::SetAxis(const Matrix& axis) {
 	return this->SetAxis(&axis[0]);
 }
 
-Space* Space::EnumSetOrigin(const cntr::EnumerateVector<Num>& origin) {
-	RHO__debug_if(origin.size() != this->dim_p_) {
-		RHO__throw__local("dim error");
-	}
-
-	return this->SetOrigin(origin.data());
-}
-
-Space* Space::EnumSetAxis(const cntr::EnumerateVector<Num>& axis) {
-	RHO__debug_if(axis.size() != this->dim_s_ * this->dim_p_)
-		RHO__throw__local("dim error");
-
-	for (size_t i(0); i != axis.size(); ++i) {
-		size_t a(i / this->dim_p_);
-		this->axis_[RHO__max_dim * a + i - a * this->dim_p_] = axis[i];
-	}
-
-	return this;
-}
-
 #///////////////////////////////////////////////////////////////////////////////
 
 void Space::Refresh() const {
@@ -448,14 +428,16 @@ bool Space::RefreshMain_() const {
 			this->parent_->root_axis_);
 
 #pragma unroll
-		for (dim_t i(0); i != RHO__max_dim; ++i)
+		for (dim_t i(0); i != RHO__max_dim; ++i) {
 			this->root_origin_[i] += this->parent_->root_origin_[i];
+		}
 
 		dot(this->dim_s_, this->dim_p_, this->dim_r_, this->root_axis_,
 			this->axis_, this->parent_->root_axis_);
 
-		if (!Complement(this->dim_s_, this->dim_r_, this->root_axis_))
+		if (!Complement(this->dim_s_, this->dim_r_, this->root_axis_)) {
 			return false;
+		}
 
 		inverse(this->dim_r_, this->i_root_axis_, this->root_axis_);
 
@@ -490,8 +472,9 @@ void Space::SetLatestFalse_() {
 
 	auto iter(this->child_.begin());
 
-	for (auto end(this->child_.end()); iter != end; ++iter)
+	for (auto end(this->child_.end()); iter != end; ++iter) {
 		(*iter)->SetLatestFalse_();
+	}
 }
 
 #///////////////////////////////////////////////////////////////////////////////
