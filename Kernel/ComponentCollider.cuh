@@ -15,9 +15,9 @@ public:
 		RHO__cuda bool Check() const;
 
 		RHO__cuda Material* set_default();
-		RHO__cuda Material* set(Num refration_index, Num transmittance_0,
+		RHO__cuda Material* set(Num refraction_index, Num transmittance_0,
 								Num transmittance_1, Num transmittance_2);
-		RHO__cuda Material* set_refraction_index(Num refration_index);
+		RHO__cuda Material* set_refraction_index(Num refraction_index);
 		RHO__cuda Material* set_transmittance(Num transmittance_0,
 											  Num transmittance_1,
 											  Num transmittance_2);

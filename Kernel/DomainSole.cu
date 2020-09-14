@@ -4,12 +4,13 @@
 namespace rho {
 
 Space* DomainSole::root() const { return this->ref_->root(); }
-
 Space* DomainSole::ref() const { return this->ref_; }
-void DomainSole::set_ref(Space* ref) { this->ref_ = ref; }
 
-dim_t DomainSole::dim_s() const { return this->ref_->dim_s(); }
+dim_t DomainSole::dim() const { return this->ref_->dim(); }
+dim_t DomainSole::dim_r() const { return this->ref_->dim_r(); }
 dim_t DomainSole::dim_cr() const { return this->ref_->dim_cr(); }
+
+void DomainSole::set_ref(Space* ref) { this->ref_ = ref; }
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -23,11 +24,12 @@ bool DomainSole::Contain(const Num* root_point) const {
 	Vec point;
 	this->ref_->MapPointFromRoot_rr(point, root_point);
 
-	for (dim_t i(this->dim_s()); i != this->dim_r(); ++i) {
+	for (dim_t i(this->dim()); i != this->dim_r(); ++i) {
 		if (point[i].ne<0>()) { return false; }
 	}
 
 	return this->Contain_s(point);
+	return true;
 }
 
 }

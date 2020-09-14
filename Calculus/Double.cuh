@@ -131,14 +131,12 @@ RHO__cuda inline Double pow(Double base, Double exponent) {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-RHO__cuda inline void swap(Double& x, Double& y) {
-	const double_t temp(x.value);
+RHO__cuda inline void Swap(Double& x, Double& y) {
+	double_t temp(x.value);
 	x.value = y.value;
 	y.value = temp;
 }
 
 }
-
-#undef RHO__eps
 
 #endif

@@ -21,8 +21,6 @@
 	RHO__debug_if((x1) != (y1) || (x2) != (y2)) RHO__throw__local("dim "       \
 																  "error");
 
-// #define dim_s_ dim_
-
 namespace rho {
 
 bool Space::latest() const {
@@ -70,7 +68,7 @@ RHO__cuda const Num* Space::i_root_axis() const { return this->i_root_axis_; }
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 
-dim_t Space::dim_s() const { return this->dim_s_; }
+dim_t Space::dim() const { return this->dim_; }
 dim_t Space::dim_p() const { return this->dim_p_; }
 dim_t Space::dim_r() const { return this->dim_r_; }
 dim_t Space::dim_cp() const { return this->dim_cp_; }
@@ -81,16 +79,16 @@ dim_t Space::dim_cr() const { return this->dim_cr_; }
 #///////////////////////////////////////////////////////////////////////////////
 
 Space::Space(dim_t dim):
-	latest_(false), parent_(nullptr), root_(this), depth_(0), dim_s_(dim),
+	latest_(false), parent_(nullptr), root_(this), depth_(0), dim_(dim),
 	dim_p_(dim), dim_r_(dim), dim_cp_(0), dim_cr_(0) {
 	RHO__debug_if(RHO__max_dim < dim) RHO__throw__local("dim error");
 }
 
 Space::Space(dim_t dim, Space* parent):
 	latest_(false), parent_(parent), root_(parent->root_),
-	depth_(parent->depth_ + 1), dim_s_(dim), dim_p_(parent->dim_s_),
-	dim_r_(parent->dim_r_), dim_cp_(this->dim_p_ - this->dim_s_),
-	dim_cr_(this->dim_r_ - this->dim_s_) {
+	depth_(parent->depth_ + 1), dim_(dim), dim_p_(parent->dim_),
+	dim_r_(parent->dim_r_), dim_cp_(this->dim_p_ - this->dim_),
+	dim_cr_(this->dim_r_ - this->dim_) {
 	RHO__debug_if(RHO__max_dim < dim) { RHO__throw__local("dim error"); }
 	this->parent_->AddChild_(this);
 }
@@ -103,24 +101,24 @@ Space::Space(dim_t dim, Space* parent):
 
 #define RHO__F(x, y)                                                           \
 	RHO_ParentCheck;                                                           \
-	dot(this->dim_##x##_, this->dim_##y##_, dst, src, this->axis_);            \
-	for (dim_t i(0); i != this->dim_##y##_; ++i) { dst[i] += this->origin_[i]; }
+	dot(this->dim_##x, this->dim_##y, dst, src, this->axis_);                  \
+	for (dim_t i(0); i != this->dim_##y; ++i) { dst[i] += this->origin_[i]; }
 
-void Space::MapPointToParent_sp(RHO__args) const { RHO__F(s, p) }
-void Space::MapPointToParent_sr(RHO__args) const { RHO__F(s, r) }
-void Space::MapPointToParent_rp(RHO__args) const { RHO__F(r, p) }
-void Space::MapPointToParent_rr(RHO__args) const { RHO__F(r, r) }
+void Space::MapPointToParent_sp(RHO__args) const { RHO__F(, p_); }
+void Space::MapPointToParent_sr(RHO__args) const { RHO__F(, r_); }
+void Space::MapPointToParent_rp(RHO__args) const { RHO__F(r_, p_); }
+void Space::MapPointToParent_rr(RHO__args) const { RHO__F(r_, r_); }
 
 #undef RHO__F
 
 #define RHO__F(x, y)                                                           \
 	RHO_ParentCheck;                                                           \
-	dot(this->dim_##x##_, dim_##y##_, dst, src, this->axis_);
+	dot(this->dim_##x, dim_##y, dst, src, this->axis_);
 
-void Space::MapVectorToParent_sp(RHO__args) const { RHO__F(s, p) }
-void Space::MapVectorToParent_sr(RHO__args) const { RHO__F(s, r) }
-void Space::MapVectorToParent_rp(RHO__args) const { RHO__F(r, p) }
-void Space::MapVectorToParent_rr(RHO__args) const { RHO__F(r, r) }
+void Space::MapVectorToParent_sp(RHO__args) const { RHO__F(, p_); }
+void Space::MapVectorToParent_sr(RHO__args) const { RHO__F(, r_); }
+void Space::MapVectorToParent_rp(RHO__args) const { RHO__F(r_, p_); }
+void Space::MapVectorToParent_rr(RHO__args) const { RHO__F(r_, r_); }
 
 #undef RHO__F
 
@@ -128,70 +126,66 @@ void Space::MapVectorToParent_rr(RHO__args) const { RHO__F(r, r) }
 
 #define RHO__F(x, y)                                                           \
 	RHO_ParentCheck;                                                           \
-	dot(this->dim_##x##_, this->dim_##y##_, dst, src, this->i_axis_);          \
-	for (dim_t i(0); i != this->dim_##y##_; ++i) {                             \
-		dst[i] -= this->i_origin_[i];                                          \
+	dot(this->dim_##x, this->dim_##y, dst, src, this->i_axis_);                \
+	for (dim_t i(0); i != this->dim_##y; ++i) { dst[i] -= this->i_origin_[i]; }
+
+void Space::MapPointFromParent_ps(RHO__args) const { RHO__F(p_, ); }
+void Space::MapPointFromParent_rs(RHO__args) const { RHO__F(r_, ); }
+void Space::MapPointFromParent_pr(RHO__args) const { RHO__F(p_, r_); }
+void Space::MapPointFromParent_rr(RHO__args) const { RHO__F(r_, r_); }
+
+#undef RHO__F
+
+#define RHO__F(x, y)                                                           \
+	RHO_ParentCheck;                                                           \
+	dot(this->dim_##x, this->dim_##y, dst, src, this->i_axis_);
+
+void Space::MapVectorFromParent_ps(RHO__args) const { RHO__F(p_, ); }
+void Space::MapVectorFromParent_rs(RHO__args) const { RHO__F(r_, ); }
+void Space::MapVectorFromParent_pr(RHO__args) const { RHO__F(p_, r_); }
+void Space::MapVectorFromParent_rr(RHO__args) const { RHO__F(r_, r_); }
+
+#undef RHO__F
+
+#///////////////////////////////////////////////////////////////////////////////
+
+#define RHO__F(x, y)                                                           \
+	dot(this->dim_##x, dim_##y, dst, src, this->root_axis_);                   \
+	for (dim_t i(0); i != this->dim_##y; ++i) {                                \
+		dst[i] += this->root_origin_[i];                                       \
 	}
 
-void Space::MapPointFromParent_ps(RHO__args) const { RHO__F(p, s) }
-void Space::MapPointFromParent_rs(RHO__args) const { RHO__F(r, s) }
-void Space::MapPointFromParent_pr(RHO__args) const { RHO__F(p, r) }
-void Space::MapPointFromParent_rr(RHO__args) const { RHO__F(r, r) }
+void Space::MapPointToRoot_sr(RHO__args) const { RHO__F(, r_); }
+void Space::MapPointToRoot_rr(RHO__args) const { RHO__F(r_, r_); }
 
 #undef RHO__F
 
 #define RHO__F(x, y)                                                           \
-	RHO_ParentCheck;                                                           \
-	dot(this->dim_##x##_, this->dim_##y##_, dst, src, this->i_axis_);
+	dot(this->dim_##x, this->dim_##y, dst, src, this->root_axis_);
 
-void Space::MapVectorFromParent_ps(RHO__args) const { RHO__F(p, s) }
-void Space::MapVectorFromParent_rs(RHO__args) const { RHO__F(r, s) }
-void Space::MapVectorFromParent_pr(RHO__args) const { RHO__F(p, r) }
-void Space::MapVectorFromParent_rr(RHO__args) const { RHO__F(r, r) }
+void Space::MapVectorToRoot_sr(RHO__args) const { RHO__F(, r_); }
+void Space::MapVectorToRoot_rr(RHO__args) const { RHO__F(r_, r_); }
 
 #undef RHO__F
 
 #///////////////////////////////////////////////////////////////////////////////
 
 #define RHO__F(x, y)                                                           \
-	dot(this->dim_##x##_, dim_##y##_, dst, src, this->root_axis_);             \
-	for (size_t i(0); i != this->dim_##y##_; ++i)                              \
-		dst[i] += this->root_origin_[i];
+	dot(this->dim_##x, this->dim_##y, dst, src, this->i_root_axis_);           \
+	for (dim_t i(0); i != this->dim_##y; ++i) {                                \
+		dst[i] -= this->i_root_origin_[i];                                     \
+	}
 
-void Space::MapPointToRoot_sr(RHO__args) const { RHO__F(s, r) }
-void Space::MapPointToRoot_rr(RHO__args) const { RHO__F(r, r) }
-
-#undef RHO__F
-
-#define RHO__F(x, y)                                                           \
-	dot(this->dim_##x##_, this->dim_##y##_, dst, src, this->root_axis_);
-
-void Space::MapVectorToRoot_sr(RHO__args) const { RHO__F(s, r) }
-void Space::MapVectorToRoot_rr(RHO__args) const { RHO__F(r, r) }
-
-#undef RHO__F
-
-#///////////////////////////////////////////////////////////////////////////////
-
-#define RHO__F(x, y)                                                           \
-	dot(this->dim_##x##_, this->dim_##y##_, dst, src, this->i_root_axis_);     \
-	for (size_t i(0); i != this->dim_##y##_; ++i)                              \
-		dst[i] -= this->i_root_origin_[i];
-
-void Space::MapPointFromRoot_rs(RHO__args) const { RHO__F(r, s) }
-void Space::MapPointFromRoot_rr(RHO__args) const { RHO__F(r, r) }
+void Space::MapPointFromRoot_rs(RHO__args) const { RHO__F(r_, ); }
+void Space::MapPointFromRoot_rr(RHO__args) const { RHO__F(r_, r_); }
 
 #undef RHO__F
 
 #define RHO__F(x, y)                                                           \
-	dot(this->dim_##x##_, this->dim_##y##_, dst, src, this->i_root_axis_);
+	dot(this->dim_##x, this->dim_##y, dst, src, this->i_root_axis_);
 
-void Space::MapVectorFromRoot_rs(RHO__args) const {
-	dot(this->dim_r_, this->dim_s_, dst, src, this->i_root_axis_);
-}
-void Space::MapVectorFromRoot_rr(RHO__args) const {
-	dot(this->dim_r_, this->dim_r_, dst, src, this->i_root_axis_);
-}
+void Space::MapVectorFromRoot_rs(RHO__args) const { RHO__F(r_, ); }
+void Space::MapVectorFromRoot_rr(RHO__args) const { RHO__F(r_, r_); }
 
 #undef RHO__F
 #undef RHO__args
@@ -201,8 +195,9 @@ void Space::MapVectorFromRoot_rr(RHO__args) const {
 #define RHO__args Num *dst, const Num *src, const Space *branch
 
 #define RHO__F(x, y)                                                           \
-	RHO__debug_if(this->root_ != branch->root_)                                \
+	RHO__debug_if(this->root_ != branch->root_) {                              \
 		RHO__throw__local("root error");                                       \
+	}                                                                          \
 	Vec temp;                                                                  \
 	this->MapPointToRoot_##x##r(temp, src);                                    \
 	branch->MapPointFromRoot_r##y(dst, temp);
@@ -215,8 +210,9 @@ void Space::MapPointToBranch_rr(RHO__args) const { RHO__F(r, r) }
 #undef RHO__F
 
 #define RHO__F(x, y)                                                           \
-	RHO__debug_if(this->root_ != branch->root_)                                \
+	RHO__debug_if(this->root_ != branch->root_) {                              \
 		RHO__throw__local("root error");                                       \
+	}                                                                          \
 	Vec temp;                                                                  \
 	this->MapVectorToRoot_##x##r(temp, src);                                   \
 	branch->MapVectorFromRoot_r##y(dst, temp);
@@ -238,9 +234,9 @@ bool Space::IncludePointFromRoot_r(const Num* src) const {
 	Vec temp;
 
 	dot(this->dim_r_, this->dim_cr_, temp, src,
-		this->i_root_axis_ + this->dim_s_);
+		this->i_root_axis_ + this->dim_);
 
-	return Equal(this->dim_cr_, temp, this->i_root_origin_ + this->dim_s_);
+	return Equal(this->dim_cr_, temp, this->i_root_origin_ + this->dim_);
 }
 
 bool Space::IncludeVectorFromRoot_r(const Num* src) const {
@@ -249,9 +245,9 @@ bool Space::IncludeVectorFromRoot_r(const Num* src) const {
 	Vec temp;
 
 	dot(this->dim_r_, this->dim_cr_, temp, src,
-		this->i_root_axis_ + this->dim_s_);
+		this->i_root_axis_ + this->dim_);
 
-	for (size_t i(0); i != this->dim_cr_; ++i) {
+	for (dim_t i(0); i != this->dim_cr_; ++i) {
 		if (temp[i].ne<0>()) { return false; }
 	}
 
@@ -264,18 +260,18 @@ bool Space::IncludeVectorFromRoot_r(const Num* src) const {
 
 bool Space::Overlap(const Space* branch) const {
 	RHO__debug_if(this->root_ != branch->root_) RHO__throw__local("root error");
-	return this->dim_s_ == branch->dim_s_ && this->Include_(branch);
+	return this->dim_ == branch->dim_ && this->Include_(branch);
 }
 
 bool Space::Include(const Space* branch) const {
 	RHO__debug_if(this->root_ != branch->root_) RHO__throw__local("root error");
-	return branch->dim_s_ <= this->dim_s_ && this->Include_(branch);
+	return branch->dim_ <= this->dim_ && this->Include_(branch);
 }
 
 bool Space::Include_(const Space* branch) const {
 	if (!this->IncludePointFromRoot_r(branch->root_origin_)) { return false; }
 
-	for (dim_t i(0); i != branch->dim_s_; ++i) {
+	for (dim_t i(0); i != branch->dim_; ++i) {
 		if (!this->IncludeVectorFromRoot_r(branch->root_axis_ +
 										   RHO__max_dim * i)) {
 			return false;
@@ -292,8 +288,9 @@ bool Space::Include_(const Space* branch) const {
 Space* Space::SetParent(Space* parent) {
 	if (this->parent_ == parent) { return this; }
 
-	RHO__debug_if(this->dim_p_ != parent->dim_s_)
+	RHO__debug_if(this->dim_p_ != parent->dim_) {
 		RHO__throw__local("dim error");
+	}
 
 	if (parent->depth_ <= this->depth_) {
 		for (Space* s(parent); s; s = s->parent_) {
@@ -313,7 +310,7 @@ Space* Space::SetParent(Space* parent) {
 
 		s->root_ = this->root_;
 		s->dim_r_ = this->dim_r_;
-		s->dim_cr_ = s->dim_s_ - this->dim_r_;
+		s->dim_cr_ = s->dim_ - this->dim_r_;
 
 		for (size_t i(0); i != s->child_.size(); ++i) {
 			l.PushBack(s->child_[i]);
@@ -343,7 +340,7 @@ Space* Space::SetOrigin(const Vector& origin) {
 }
 
 Space* Space::SetAxis(const Matrix& axis) {
-	RHO__dim_check(this->dim_s_, axis.col_dim());
+	RHO__dim_check(this->dim_, axis.col_dim());
 	RHO__dim_check(this->dim_p_, axis.row_dim());
 	return this->SetAxis(&axis[0]);
 }
@@ -385,20 +382,20 @@ void Space::Refresh() const {
 }
 
 bool Space::RefreshSelf() const {
-	cntr::Vector<const Space*> s(this->depth_ + 1);
+	const Space* s(this);
+	const Space* i(this);
+	const Space* j;
 
-	const Space* a(this);
-	size_t j(s.size());
+	do {
+		if (j = i->parent_) { j->temp_ = i; }
+		if (!i->latest_) { s = i; }
+	} while (i = j);
 
-	for (size_t i(s.size()); i; --i, a = a->parent_) {
-		if (!((s[i - 1] = a)->latest_)) { j = i - 1; }
+	for (; s != this; s = s->temp_) {
+		if (!s->RefreshMain_()) { return false; }
 	}
 
-	for (; j != s.size(); ++j) {
-		if (!s[j]->RefreshMain_()) { return false; }
-	}
-
-	return true;
+	return this->RefreshMain_();
 }
 
 void Space::RefreshDescendant_() const {
@@ -418,7 +415,7 @@ bool Space::RefreshMain_() const {
 			this->origin_[i] = 0;
 		}
 
-		for (dim_t i(0); i != this->dim_s_; ++i) {
+		for (dim_t i(0); i != this->dim_; ++i) {
 			for (dim_t j(this->dim_p_); j != this->dim_r_; ++j) {
 				this->axis_[RHO__max_dim * i + j] = 0;
 			}
@@ -432,10 +429,10 @@ bool Space::RefreshMain_() const {
 			this->root_origin_[i] += this->parent_->root_origin_[i];
 		}
 
-		dot(this->dim_s_, this->dim_p_, this->dim_r_, this->root_axis_,
+		dot(this->dim_, this->dim_p_, this->dim_r_, this->root_axis_,
 			this->axis_, this->parent_->root_axis_);
 
-		if (!Complement(this->dim_s_, this->dim_r_, this->root_axis_)) {
+		if (!Complement(this->dim_, this->dim_r_, this->root_axis_)) {
 			return false;
 		}
 
@@ -445,8 +442,8 @@ bool Space::RefreshMain_() const {
 			this->root_origin_, this->i_root_axis_);
 
 		dot(this->dim_cr_, this->dim_r_, this->dim_r_,
-			this->axis_ + RHO__max_dim * this->dim_s_,
-			this->root_axis_ + RHO__max_dim * this->dim_s_,
+			this->axis_ + RHO__max_dim * this->dim_,
+			this->root_axis_ + RHO__max_dim * this->dim_,
 			this->parent_->i_root_axis_);
 	} else {
 		Fill<RHO__max_dim>(this->origin_, 0);

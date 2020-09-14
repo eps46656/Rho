@@ -22,7 +22,7 @@ ComponentCollider::Material* ComponentCollider::Material::set_default() {
 }
 
 ComponentCollider::Material*
-ComponentCollider::Material::set(Num refration_index, Num transmittance_0,
+ComponentCollider::Material::set(Num refraction_index, Num transmittance_0,
 								 Num transmittance_1, Num transmittance_2) {
 	this->refraction_index = refraction_index;
 	this->transmittance[0] = transmittance_0;
@@ -32,7 +32,7 @@ ComponentCollider::Material::set(Num refration_index, Num transmittance_0,
 }
 
 ComponentCollider::Material*
-ComponentCollider::Material::set_refraction_index(Num refration_index) {
+ComponentCollider::Material::set_refraction_index(Num refraction_index) {
 	this->refraction_index = refraction_index;
 	return this;
 }

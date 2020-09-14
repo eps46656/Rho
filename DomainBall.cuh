@@ -31,12 +31,13 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda bool RayCastB(const Ray& ray) const override;
+	RHO__cuda size_t RayCastComplexity() const;
 	RHO__cuda RayCastData RayCast(const Ray& ray) const override;
+	RHO__cuda bool RayCastB(const Ray& ray) const override;
 	RHO__cuda void RayCastPair(RayCastDataPair& rcdp,
 							   const Ray& ray) const override;
-	RHO__cuda bool RayCastFull(RayCastDataVector& dst,
-							   const Ray& ray) const override;
+	RHO__cuda size_t RayCastFull(RayCastData* dst,
+								 const Ray& ray) const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -46,10 +47,6 @@ public:
 
 	RHO__cuda void GetTodTan(Num* dst, const RayCastData& rcd,
 							 const Num* root_direct) const override;
-
-#///////////////////////////////////////////////////////////////////////////////
-
-	RHO__cuda size_t Complexity() const;
 
 private:
 	RHO__cuda bool RayCast_(const Ray& ray, RayCastTemp& rct) const;

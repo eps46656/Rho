@@ -14,7 +14,7 @@ bool DomainParallelotope::Refresh() const {
 
 	ContainFlag flag(0);
 	ContainFlag flag_end(1);
-	flag_end <<= this->dim_s();
+	flag_end <<= this->dim();
 
 	this->tod_matrix_.Resize(flag_end);
 
@@ -41,7 +41,7 @@ bool DomainParallelotope::Refresh() const {
 #///////////////////////////////////////////////////////////////////////////////
 
 bool DomainParallelotope::Contain_s(const Num* point) const {
-	for (size_t i(0); i != this->dim_s(); ++i) {
+	for (size_t i(0); i != this->dim(); ++i) {
 		if (point[i].lt<-1>() || point[i].gt<1>()) { return false; }
 	}
 
@@ -50,13 +50,8 @@ bool DomainParallelotope::Contain_s(const Num* point) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainParallelotope::RayCastB(const Ray& ray) const {
-	RayCastTemp rct;
-	if (!this->RayCast_(ray, rct)) { return false; }
-
-	if (rct.t[0].eq<0>()) { return rct.t[1].ne<0>() && rct.t[1].lt<1>(); }
-
-	return rct.t[0].lt<1>();
+size_t DomainParallelotope::RayCastComplexity() const {
+	return 10 * this->dim() + 5 * this->dim_cr();
 }
 
 RayCastData DomainParallelotope::RayCast(const Ray& ray) const {
@@ -85,6 +80,15 @@ RayCastData DomainParallelotope::RayCast(const Ray& ray) const {
 	}
 
 	return RayCastData();
+}
+
+bool DomainParallelotope::RayCastB(const Ray& ray) const {
+	RayCastTemp rct;
+	if (!this->RayCast_(ray, rct)) { return false; }
+
+	if (rct.t[0].eq<0>()) { return rct.t[1].ne<0>() && rct.t[1].lt<1>(); }
+
+	return rct.t[0].lt<1>();
 }
 
 void DomainParallelotope::RayCastPair(RayCastDataPair& rcdp,
@@ -126,31 +130,34 @@ void DomainParallelotope::RayCastPair(RayCastDataPair& rcdp,
 	}
 }
 
-bool DomainParallelotope::RayCastFull(RayCastDataVector& dst,
-									  const Ray& ray) const {
+size_t DomainParallelotope::RayCastFull(RayCastData* dst,
+										const Ray& ray) const {
 	RayCastTemp rct;
+	if (!this->RayCast_(ray, rct)) { return 0; }
 
-	if (this->RayCast_(ray, rct)) {
-		if (rct.t[0].ne<0>()) {
-			auto rcd(New<RayCastDataCore_>());
-			rcd->domain = this;
-			rcd->t = rct.t[0];
-			rcd->phase.set(false, rct.t[0] != rct.t[1]);
-			rcd->contain_flag = rct.contain_flag[0];
-			dst.Push(rcd);
-		}
+	size_t size(0);
 
-		if (rct.t[0] != rct.t[1]) {
-			auto rcd(New<RayCastDataCore_>());
-			rcd->domain = this;
-			rcd->t = rct.t[1];
-			rcd->phase.set(true, false);
-			rcd->contain_flag = rct.contain_flag[1];
-			dst.Push(rcd);
-		}
+	if (rct.t[0].ne<0>()) {
+		auto rcd(New<RayCastDataCore_>());
+		rcd->domain = this;
+		rcd->t = rct.t[0];
+		rcd->phase.set(false, rct.t[0] != rct.t[1]);
+		rcd->contain_flag = rct.contain_flag[0];
+		dst[size] = rcd;
+		++size;
 	}
 
-	return false;
+	if (rct.t[0] != rct.t[1]) {
+		auto rcd(New<RayCastDataCore_>());
+		rcd->domain = this;
+		rcd->t = rct.t[1];
+		rcd->phase.set(true, false);
+		rcd->contain_flag = rct.contain_flag[1];
+		dst[size] = rcd;
+		++size;
+	}
+
+	return size;
 }
 
 bool DomainParallelotope::RayCast_(const Ray& ray, RayCastTemp& rct) const {
@@ -166,7 +173,7 @@ bool DomainParallelotope::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (dim_t i(this->dim_s()); i != this->dim_r(); ++i) {
+	for (dim_t i(this->dim()); i != this->dim_r(); ++i) {
 		if (direct[i].eq<0>()) {
 			if (origin[i].eq<0>()) { continue; }
 			return false;
@@ -179,7 +186,7 @@ bool DomainParallelotope::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (dim_t i(0); i != this->dim_s(); ++i) {
+	for (dim_t i(0); i != this->dim(); ++i) {
 		if (direct[i].eq<0>()) {
 			if (origin[i].lt<-1>() || origin[i].gt<1>()) { return false; }
 			continue;
@@ -216,9 +223,4 @@ void DomainParallelotope::GetTodTan(Num* dst, const RayCastData& rcd,
 		this->tod_matrix_[rcd.Get<RayCastDataCore_*>()->contain_flag]);
 }
 
-#////////////////////////////////////////////////
-
-size_t DomainParallelotope::Complexity() const {
-	return 10 * this->dim_s() + 5 * this->dim_cr();
-}
 }

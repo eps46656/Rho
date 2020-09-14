@@ -20,7 +20,7 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda DomainParallelotope(Space* ref);
+	RHO__cuda DomainParallelotope(Space* ref = nullptr);
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -32,21 +32,18 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda bool RayCastB(const Ray& ray) const override;
+	RHO__cuda size_t RayCastComplexity() const override;
 	RHO__cuda RayCastData RayCast(const Ray& ray) const override;
+	RHO__cuda bool RayCastB(const Ray& ray) const override;
 	RHO__cuda void RayCastPair(RayCastDataPair& rcdp,
 							   const Ray& ray) const override;
-	RHO__cuda bool RayCastFull(RayCastDataVector& dst,
-							   const Ray& ray) const override;
+	RHO__cuda size_t RayCastFull(RayCastData* dst,
+								 const Ray& ray) const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda void GetTodTan(Num* dst, const RayCastData& rcd,
 							 const Num* root_direct) const override;
-
-#///////////////////////////////////////////////////////////////////////////////
-
-	RHO__cuda size_t Complexity() const override;
 
 private:
 	mutable cntr::Vector<Matrix> tod_matrix_;

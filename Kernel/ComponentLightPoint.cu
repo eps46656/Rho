@@ -15,7 +15,7 @@ const Num3& ComponentLightPoint::intensity() const { return this->intensity_; }
 ComponentLightPoint::ComponentLightPoint(Object* object, Space* ref,
 										 const Num3& intensity):
 	ComponentLight(object),
-	intensity_(intensity), ref_(ref) {}
+	ref_(ref), intensity_(intensity) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 

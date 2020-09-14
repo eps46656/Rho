@@ -12,39 +12,41 @@ Domain::~Domain() {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
+RayCastData Domain::RayCast(const Ray& ray) const {
+	RayCastDataVector rcdv;
+	return this->RayCastFull(rcdv, ray) == 0 ? RayCastData() : Move(rcdv[0]);
+}
+
 bool Domain::RayCastB(const Ray& ray) const {
 	auto rcd(this->RayCast(ray));
 	return rcd && rcd->t.lt<1>();
 }
 
-RayCastData Domain::RayCast(const Ray& ray) const {
-	RayCastDataVector rcdv;
-	this->RayCastFull(rcdv, ray);
-	return rcdv.empty() ? RayCastData() : Move(rcdv[0]);
-}
-
 void Domain::RayCastPair(RayCastDataPair& rcdp, const Ray& ray) const {
 	RayCastDataVector rcdv;
-	this->RayCastFull(rcdv, ray);
-	if (rcdv.empty()) { return; }
 
-	if (rcdv.size() == 1) {
-		if (rcdv[0] < rcdp[0]) {
-			rcdp[1] = Move(rcdp[0]);
-			rcdp[0] = Move(rcdv[0]);
-		} else if (rcdv[0] < rcdp[1]) {
-			rcdp[1] = Move(rcdv[0]);
-		}
-	} else {
-		if (rcdv[1] < rcdp[0]) {
-			rcdp[0] = Move(rcdv[0]);
-			rcdp[1] = Move(rcdv[1]);
-		} else if (rcdv[0] < rcdp[0]) {
-			rcdp[1] = Move(rcdp[0]);
-			rcdp[0] = Move(rcdv[0]);
-		} else if (rcdv[0] < rcdp[1]) {
-			rcdp[1] = Move(rcdv[0]);
-		}
+	switch (this->RayCastFull(rcdv, ray)) {
+		case RHO__Domain__RayCastFull_in_phase: return;
+		case 0: return;
+		case 1:
+			if (rcdv[0] < rcdp[0]) {
+				rcdp[1] = Move(rcdp[0]);
+				rcdp[0] = Move(rcdv[0]);
+			} else if (rcdv[0] < rcdp[1]) {
+				rcdp[1] = Move(rcdv[0]);
+			}
+
+			return;
+	}
+
+	if (rcdv[1] < rcdp[0]) {
+		rcdp[0] = Move(rcdv[0]);
+		rcdp[1] = Move(rcdv[1]);
+	} else if (rcdv[0] < rcdp[0]) {
+		rcdp[1] = Move(rcdp[0]);
+		rcdp[0] = Move(rcdv[0]);
+	} else if (rcdv[0] < rcdp[1]) {
+		rcdp[1] = Move(rcdv[0]);
 	}
 }
 

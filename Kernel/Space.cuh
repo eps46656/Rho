@@ -32,7 +32,7 @@ public:
 	// p:this->dim_p_
 	// r:this->dim_r_
 
-	RHO__cuda dim_t dim_s() const;
+	RHO__cuda dim_t dim() const;
 	RHO__cuda dim_t dim_p() const;
 	RHO__cuda dim_t dim_r() const;
 	RHO__cuda dim_t dim_cp() const;
@@ -191,7 +191,7 @@ public:
 	}
 
 	template<typename... Args> RHO__cuda Space* EnumSetAxis(Args&&... args) {
-		RHO__debug_if(sizeof...(args) != this->dim_s_ * this->dim_p_) {
+		RHO__debug_if(sizeof...(args) != this->dim_ * this->dim_p_) {
 			RHO__throw(Space, __func__, "dim error");
 		}
 
@@ -229,13 +229,13 @@ private:
 
 	size_t depth_;
 
-	const dim_t dim_s_;
+	const dim_t dim_;
 	const dim_t dim_p_;
 	dim_t dim_r_;
 	const dim_t dim_cp_;
 	dim_t dim_cr_;
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 	mutable Vec origin_;
 	mutable Mat axis_;
@@ -249,24 +249,28 @@ private:
 	mutable Vec i_root_origin_;
 	mutable Mat i_root_axis_;
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 	mutable Mat proj_root_axis_rs_;
 	mutable Mat proj_root_axis_rr_;
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
+
+	mutable const Space* temp_;
+
+#///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda void Check() const;
 	RHO__cuda bool RefreshMain_() const;
 	RHO__cuda void RefreshDescendant_() const;
 	RHO__cuda void SetLatestFalse_();
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda void AddChild_(Space* space);
 	RHO__cuda void SubChild_(Space* space);
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda bool Include_(const Space* branch) const;
 };

@@ -25,8 +25,8 @@ template<typename T, size_t N> struct Array {
 
 	RHO__cuda ~Array() {}
 
-	operator T*() { return this->value; }
-	operator const T*() const { return this->value; }
+	RHO__cuda operator T*() { return this->value; }
+	RHO__cuda operator const T*() const { return this->value; }
 
 #///////////////////////////////////////////////////////////////////////////////
 

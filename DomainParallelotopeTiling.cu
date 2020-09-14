@@ -14,7 +14,7 @@ DomainParallelotopeTiling::DomainParallelotopeTiling(Space* ref):
 bool DomainParallelotopeTiling::Refresh() const {
 	if (!this->ref()->RefreshSelf()) { return false; }
 
-	this->tod_matrix_.set_dim(this->dim_s(), this->dim_r());
+	this->tod_matrix_.set_dim(this->dim(), this->dim_r());
 	Copy<RHO__max_dim_sq>(this->tod_matrix_, this->ref()->root_axis());
 	Tod::TanMatrix(this->tod_matrix_);
 
@@ -29,9 +29,8 @@ bool DomainParallelotopeTiling::Contain_s(const Num* point) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainParallelotopeTiling::RayCastB(const Ray& ray) const {
-	Num t(this->RayCast_(ray));
-	return t.ne<0>() && t.lt<1>();
+size_t DomainParallelotopeTiling::RayCastComplexity() const {
+	return this->dim_cr() * 5;
 }
 
 RayCastData DomainParallelotopeTiling::RayCast(const Ray& ray) const {
@@ -45,6 +44,11 @@ RayCastData DomainParallelotopeTiling::RayCast(const Ray& ray) const {
 	}
 
 	return r;
+}
+
+bool DomainParallelotopeTiling::RayCastB(const Ray& ray) const {
+	Num t(this->RayCast_(ray));
+	return t.ne<0>() && t.lt<1>();
 }
 
 void DomainParallelotopeTiling::RayCastPair(RayCastDataPair& rcdp,
@@ -65,21 +69,22 @@ void DomainParallelotopeTiling::RayCastPair(RayCastDataPair& rcdp,
 	}
 }
 
-bool DomainParallelotopeTiling::RayCastFull(RayCastDataVector& dst,
-											const Ray& ray) const {
+size_t DomainParallelotopeTiling::RayCastFull(RayCastData* dst,
+											  const Ray& ray) const {
 	Num t(this->RayCast_(ray));
 
-	if (t.eq<-1>()) { return true; }
+	if (t.lt<0>()) { return RHO__Domain__RayCastFull_in_phase; }
 
-	if (t.ne<0>()) {
+	if (t.gt<0>()) {
 		auto rcd(New<RayCastDataCore>());
 		rcd->domain = this;
 		rcd->t = t;
+		dst[0] = rcd;
 
-		dst.Push(rcd);
+		return 1;
 	}
 
-	return false;
+	return 0;
 }
 
 Num DomainParallelotopeTiling::RayCast_(const Ray& ray) const {
@@ -91,7 +96,7 @@ Num DomainParallelotopeTiling::RayCast_(const Ray& ray) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (dim_t i(this->dim_s()); i != this->dim_r(); ++i) {
+	for (dim_t i(this->dim()); i != this->dim_r(); ++i) {
 		if (direct[i].eq<0>()) {
 			if (origin[i].eq<0>()) { continue; }
 			return 0;
@@ -118,10 +123,4 @@ void DomainParallelotopeTiling::GetTodTan(Num* dst, const RayCastData& rcd,
 	dot(this->dim_r(), this->dim_r(), dst, root_direct, this->tod_matrix_);
 }
 
-#///////////////////////////////////////////////////////////////////////////////
-
-size_t DomainParallelotopeTiling::Complexity() const {
-	return this->dim_cr() * 5;
 }
-
-} // namespace rho

@@ -11,7 +11,8 @@ public:
 	RHO__cuda Space* root() const override;
 	RHO__cuda Space* ref() const;
 
-	RHO__cuda dim_t dim_s() const;
+	RHO__cuda dim_t dim() const;
+	RHO__cuda dim_t dim_r() const override;
 	RHO__cuda dim_t dim_cr() const;
 
 	RHO__cuda void set_ref(Space* ref);

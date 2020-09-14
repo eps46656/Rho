@@ -14,19 +14,13 @@ bool DomainBall::Refresh() const { return this->ref()->RefreshSelf(); }
 #///////////////////////////////////////////////////////////////////////////////
 
 bool DomainBall::Contain_s(const Num* point) const {
-	return sq(this->dim_s(), point).le<1>();
+	return sq(this->dim(), point).le<1>();
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainBall::RayCastB(const Ray& ray) const {
-	RayCastTemp rct;
-
-	if (!this->RayCast_(ray, rct)) { return false; }
-	if (rct.t[0].ne<0>()) { return rct.t[0].lt<1>(); }
-	if (rct.t[1].ne<0>()) { return rct.t[1].lt<1>(); }
-
-	return false;
+size_t DomainBall::RayCastComplexity() const {
+	return 15 * this->dim() + 5 * this->dim_cr();
 }
 
 RayCastData DomainBall::RayCast(const Ray& ray) const {
@@ -55,6 +49,16 @@ RayCastData DomainBall::RayCast(const Ray& ray) const {
 	}
 
 	return RayCastData();
+}
+
+bool DomainBall::RayCastB(const Ray& ray) const {
+	RayCastTemp rct;
+
+	if (!this->RayCast_(ray, rct)) { return false; }
+	if (rct.t[0].ne<0>()) { return rct.t[0].lt<1>(); }
+	if (rct.t[1].ne<0>()) { return rct.t[1].lt<1>(); }
+
+	return false;
 }
 
 void DomainBall::RayCastPair(RayCastDataPair& rcdp, const Ray& ray) const {
@@ -95,32 +99,33 @@ void DomainBall::RayCastPair(RayCastDataPair& rcdp, const Ray& ray) const {
 	}
 }
 
-bool DomainBall::RayCastFull(RayCastDataVector& dst, const Ray& ray) const {
+size_t DomainBall::RayCastFull(RayCastData* dst, const Ray& ray) const {
 	RayCastTemp rct;
+	if (!this->RayCast_(ray, rct)) { return 0; }
 
-	if (this->RayCast_(ray, rct)) {
-		if (rct.t[0].ne<0>()) {
-			auto rcd(New<RayCastDataCore_>());
-			rcd->domain = this;
-			rcd->t = rct.t[0];
-			rcd->phase.set(false, rct.t[0] != rct.t[1]);
-			line<RHO__max_dim>(rcd->point, rct.t[0], rct.direct, rct.origin);
+	size_t size(0);
 
-			dst.Push(rcd);
-		}
-
-		if (rct.t[0] != rct.t[1]) {
-			auto rcd(New<RayCastDataCore_>());
-			rcd->domain = this;
-			rcd->t = rct.t[1];
-			rcd->phase.set(true, false);
-			line<RHO__max_dim>(rcd->point, rct.t[1], rct.direct, rct.origin);
-
-			dst.Push(rcd);
-		}
+	if (rct.t[0].ne<0>()) {
+		auto rcd(New<RayCastDataCore_>());
+		rcd->domain = this;
+		rcd->t = rct.t[0];
+		rcd->phase.set(false, rct.t[0] != rct.t[1]);
+		line<RHO__max_dim>(rcd->point, rct.t[0], rct.direct, rct.origin);
+		dst[size] = rcd;
+		++size;
 	}
 
-	return false;
+	if (rct.t[0] != rct.t[1]) {
+		auto rcd(New<RayCastDataCore_>());
+		rcd->domain = this;
+		rcd->t = rct.t[1];
+		rcd->phase.set(true, false);
+		line<RHO__max_dim>(rcd->point, rct.t[1], rct.direct, rct.origin);
+		dst[size] = rcd;
+		++size;
+	}
+
+	return size;
 }
 
 bool DomainBall::RayCast_(const Ray& ray, RayCastTemp& rct) const {
@@ -134,7 +139,7 @@ bool DomainBall::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 		Num b(0);
 		Num c(-1);
 
-		for (size_t i(0); i != this->dim_s(); ++i) {
+		for (size_t i(0); i != this->dim(); ++i) {
 			a += sq(rct.direct[i]);
 			b -= rct.origin[i] * rct.direct[i];
 			c += sq(rct.origin[i]);
@@ -156,7 +161,7 @@ bool DomainBall::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (size_t i(this->dim_s()); i != this->dim_r(); ++i) {
+	for (size_t i(this->dim()); i != this->dim_r(); ++i) {
 		if (rct.direct[i].eq<0>()) {
 			if (rct.origin[i].eq<0>()) { continue; }
 			return false;
@@ -173,28 +178,27 @@ bool DomainBall::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 #///////////////////////////////////////////////////////////////////////////////
 
 Matrix DomainBall::GetParallelVector_s(const Vector& point) const {
-	RHO__debug_if(this->dim_r() != point.dim() &&
-				  this->dim_s() != point.dim()) {
+	RHO__debug_if(this->dim_r() != point.dim() && this->dim() != point.dim()) {
 		RHO__throw__local("dim error");
 	}
 
-	Num a(sq(this->dim_s(), point));
+	Num a(sq(this->dim(), point));
 
 	if (a.ne<1>()) {
-		Matrix r(this->dim_s(), this->dim_r());
+		Matrix r(this->dim(), this->dim_r());
 		Matrix::identity(r, this->dim_r());
 
 		return r;
 	}
 
-	Matrix orth(1, this->dim_s());
-	Copy(this->dim_s(), orth, point);
+	Matrix orth(1, this->dim());
+	Copy(this->dim(), orth, point);
 
 	Complement(orth);
 
-	Matrix tan(this->dim_s() - 1, this->dim_r());
-	dot(this->dim_s() - 1, this->dim_s(), this->dim_r(), tan,
-		orth + this->dim_s(), this->ref()->root_axis());
+	Matrix tan(this->dim() - 1, this->dim_r());
+	dot(this->dim() - 1, this->dim(), this->dim_r(), tan, orth + this->dim(),
+		this->ref()->root_axis());
 
 	return tan;
 }
@@ -210,26 +214,20 @@ void DomainBall::GetTodTan(Num* dst, const RayCastData& rcd,
 	Mat m;
 	Mat temp;
 
-	if (sq(this->dim_s(), point).ne<1>()) {
+	if (sq(this->dim(), point).ne<1>()) {
 		Matrix::identity(temp, this->dim_r());
-		Tod::TanMatrix(this->dim_s(), this->dim_r(), m, temp);
+		Tod::TanMatrix(this->dim(), this->dim_r(), m, temp);
 	} else {
 		Copy<RHO__max_dim>(m, point);
-		Complement(1, this->dim_s(), m);
+		Complement(1, this->dim(), m);
 
-		dot(this->dim_s() - 1, this->dim_s(), this->dim_r(), temp,
-			m + RHO__max_dim, this->ref()->root_axis());
+		dot(this->dim() - 1, this->dim(), this->dim_r(), temp, m + RHO__max_dim,
+			this->ref()->root_axis());
 
-		Tod::TanMatrix(this->dim_s() - 1, this->dim_r(), m, temp);
+		Tod::TanMatrix(this->dim() - 1, this->dim_r(), m, temp);
 	}
 
 	dot(this->dim_r(), this->dim_r(), dst, root_direct, m);
-}
-
-#//////////////////////////////////////////////////////////////////////////////
-
-size_t DomainBall::Complexity() const {
-	return 15 * this->dim_s() + 5 * this->dim_cr();
 }
 
 }

@@ -34,12 +34,11 @@ void Camera::set_max_depth(size_t max_depth) { this->max_depth_ = max_depth; }
 size_t Camera::render_data_size() const { return this->render_data_size_; }
 Camera::RenderData* Camera::render_data() const { return this->render_data_; }
 
-RHO__cuda ComponentCollider::Material& Camera::void_cmpt_collider_material() {
+ComponentCollider::Material& Camera::void_cmpt_collider_material() {
 	return this->void_cmpt_collider_material_;
 }
 
-RHO__cuda const ComponentCollider::Material&
-Camera::void_cmpt_collider_material() const {
+const ComponentCollider::Material& Camera::void_cmpt_collider_material() const {
 	return this->void_cmpt_collider_material_;
 }
 
@@ -78,7 +77,27 @@ void Camera::Render(size_t block_pos_h, size_t block_pos_w, size_t block_size_h,
 }
 
 RHO__glb void CameraRenderReady_(const Camera* camera, size_t size) {
+	RHO__debug_if(!camera->void_cmpt_collider_material_.Check()) {
+		RHO__throw__local("material error");
+	}
+
 	camera->ref_->RefreshSelf();
+
+	for (size_t i(0); i != camera->cmpt_light_.size(); ++i) {
+#if RHO__debug_flag
+		for (size_t j(i + 1); j != camera->cmpt_light_.size(); ++j) {
+			if (camera->cmpt_light_[i] == camera->cmpt_light_[j]) {
+				RHO__throw__local("repeat cmpt light");
+			}
+		}
+
+		if (!camera->cmpt_light_[i]->Refresh()) {
+			RHO__throw__local("cmpt light refresh error");
+		}
+#else
+		camera->cmpt_light_[i]->Refresh();
+#endif
+	}
 
 	{
 		// compare cmpt_collider__ray_cast_order_ and
@@ -110,22 +129,9 @@ RHO__glb void CameraRenderReady_(const Camera* camera, size_t size) {
 		Sort(camera->cmpt_collider__ray_cast_order_.begin(),
 			 camera->cmpt_collider__ray_cast_order_.end(),
 			 [](const ComponentCollider* x, const ComponentCollider* y) {
-				 return x->domain()->Complexity() < y->domain()->Complexity();
+				 return x->domain()->RayCastComplexity() <
+						y->domain()->RayCastComplexity();
 			 });
-	}
-
-	{
-		for (size_t i(0); i != camera->cmpt_light_.size(); ++i) {
-			if (!camera->cmpt_light_[i]->Refresh()) {
-				RHO__throw__local("refresh error");
-			}
-		}
-	}
-
-	{
-		RHO__debug_if(!camera->void_cmpt_collider_material_.Check()) {
-			RHO__throw__local("material error");
-		}
 	}
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -526,5 +532,4 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 		n = m;
 	}
 }
-
 }

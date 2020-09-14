@@ -25,14 +25,14 @@ public:
 	RHO__cuda Space* ref() const;
 	RHO__cuda Domain* domain() const;
 
-	RHO__cuda void ref(Space* ref);
-	RHO__cuda void domain(Domain* domain);
+	RHO__cuda void set_ref(Space* ref = nullptr);
+	RHO__cuda void set_domain(Domain* domain);
 
 	RHO__cuda Space* root() const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda DomainStretch(Space* ref, Domain* domain);
+	RHO__cuda DomainStretch(Space* ref = nullptr, Domain* domain = nullptr);
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -50,22 +50,21 @@ public:
 		RayCastDataPair& rcdp,
 		ComponentCollider* cmpt_collider,
 		const Ray& ray)const override;*/
-	RHO__cuda bool RayCastFull(RayCastDataVector& dst,
-							   const Ray& ray) const override;
+
+	RHO__cuda size_t RayCastComplexity() const override;
+	RHO__cuda size_t RayCastFull(RayCastData* dst,
+								 const Ray& ray) const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda void GetTodTan(Num* dst, const RayCastData& rcd,
 							 const Num* root_direct) const override;
 
-#///////////////////////////////////////////////////////////////////////////////
-
-	RHO__cuda size_t Complexity() const override;
-
 private:
 	Space* ref_;
-	Space* eff_;
 	Domain* domain_;
+
+	mutable Space* eff_;
 
 	mutable Mat eff_todm_;
 	mutable Mat ref_todm_;

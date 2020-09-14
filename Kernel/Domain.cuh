@@ -9,19 +9,6 @@ class Domain {
 public:
 	enum Type { universe, sole, complex };
 
-	enum struct RayCastPairReturn : int {
-		no_change = 0b00,
-		first_change = 0b01,
-		second_change = 0b10,
-		both_change = 0b11
-	};
-
-	enum struct RayCastFullReturn : int {
-		normal,
-		out_phase,
-		in_phase,
-	};
-
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
@@ -46,19 +33,23 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda virtual bool RayCastB(const Ray& ray) const;
+	RHO__cuda virtual size_t RayCastComplexity() const = 0;
 	RHO__cuda virtual RayCastData RayCast(const Ray& ray) const;
+	RHO__cuda virtual bool RayCastB(const Ray& ray) const;
 	RHO__cuda virtual void RayCastPair(RayCastDataPair& rcdp,
 									   const Ray& ray) const;
-	RHO__cuda virtual bool RayCastFull(RayCastDataVector& rcdv,
-									   const Ray& ray) const = 0;
+	RHO__cuda virtual size_t RayCastFull(RayCastData* dst,
+										 const Ray& ray) const = 0;
 
 	/*
 
 	only rcdv.size() does not changed after calling RayCastFull
 	RayCastDataFull's return value meaning :
-	true  : ray is totally     in phase
-	false : ray is totally not in phase
+	0 : ray is tot
+
+	0 : rcd size, ray is totally not in phase
+	1 ~ RHO__RayCastFull_max_rcd : rcd size
+	RHO__Domain__RayCastFull_in_phase : ray is totally in phase
 
 	*/
 
@@ -69,10 +60,10 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda virtual size_t Complexity() const = 0;
-
-private:
-	Manager* manager_;
+	// RHO__cuda Domain* Equivalence() const;
+	// simplify self then return a equivalent domain, aim ot optimize
+	// return nullptr represent self domain is null
+	// return self pointer represent self domain has been simplified
 };
 
 }
