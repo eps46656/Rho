@@ -1,9 +1,9 @@
 #ifndef RHO__define_guard__Container__RedBlackTreeNode_cuh
 #define RHO__define_guard__Container__RedBlackTreeNode_cuh
 
-#include"../define.cuh"
+#include "../define.cuh"
 
-#define RHO__throw__local(discription) \
+#define RHO__throw__local(discription)                                         \
 	RHO__throw(container::RedBlackTreeNode, __func__, discription);
 
 namespace rho {
@@ -14,60 +14,58 @@ struct RedBlackTreeNode {
 	static constexpr bool black = false;
 	static constexpr bool red = true;
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 	Self* p;
 	Self* l;
 	Self* r;
 	bool color;
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda RedBlackTreeNode();
 	RHO__cuda virtual ~RedBlackTreeNode();
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda Self* prev();
-	RHO__cuda const Self* prev()const;
+	RHO__cuda const Self* prev() const;
 
 	RHO__cuda Self* next();
-	RHO__cuda const Self* next()const;
+	RHO__cuda const Self* next() const;
 
 	RHO__cuda Self* root();
-	RHO__cuda const Self* root()const;
+	RHO__cuda const Self* root() const;
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda void RotateL();
 	RHO__cuda void RotateR();
 
 	RHO__cuda static void Swap(Self* x, Self* y);
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda void InsertL(Self* n);
 	RHO__cuda void InsertR(Self* n);
 	RHO__cuda void InsertFix();
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda void Remove();
+	RHO__cuda void Release();
 	RHO__cuda void ReleaseFix();
 };
 
-#////////////////////////////////////////////////
-#////////////////////////////////////////////////
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
+inline RedBlackTreeNode::RedBlackTreeNode():
+	p(nullptr), l(nullptr), r(nullptr), color(black) {}
 
-inline RedBlackTreeNode::RedBlackTreeNode() :
-	p(nullptr), l(nullptr), r(nullptr),
-	color(black) {}
+inline RedBlackTreeNode::~RedBlackTreeNode() { this->Release(); }
 
-inline RedBlackTreeNode::~RedBlackTreeNode() { this->Remove(); }
-
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 inline RedBlackTreeNode* RedBlackTreeNode::prev() {
 	if (this->l) {
@@ -86,8 +84,9 @@ inline RedBlackTreeNode* RedBlackTreeNode::prev() {
 	return nullptr;
 }
 
-inline const RedBlackTreeNode* RedBlackTreeNode::
-prev()const { return const_cast<Self*>(this)->prev(); }
+inline const RedBlackTreeNode* RedBlackTreeNode::prev() const {
+	return const_cast<Self*>(this)->prev();
+}
 
 inline RedBlackTreeNode* RedBlackTreeNode::next() {
 	if (this->r) {
@@ -106,8 +105,9 @@ inline RedBlackTreeNode* RedBlackTreeNode::next() {
 	return nullptr;
 }
 
-inline const RedBlackTreeNode* RedBlackTreeNode::
-next()const { return const_cast<Self*>(this)->next(); }
+inline const RedBlackTreeNode* RedBlackTreeNode::next() const {
+	return const_cast<Self*>(this)->next();
+}
 
 inline RedBlackTreeNode* RedBlackTreeNode::root() {
 	Self* r(this);
@@ -115,8 +115,9 @@ inline RedBlackTreeNode* RedBlackTreeNode::root() {
 	return r;
 }
 
-inline const RedBlackTreeNode* RedBlackTreeNode::
-root()const { return const_cast<Self*>(this)->root(); }
+inline const RedBlackTreeNode* RedBlackTreeNode::root() const {
+	return const_cast<Self*>(this)->root();
+}
 
 inline void RedBlackTreeNode::RotateL() {
 	Self* p(this->r->p = this->p);
@@ -127,10 +128,11 @@ inline void RedBlackTreeNode::RotateL() {
 	r->l = this;
 
 	if (p) {
-		if (this == p->l)
+		if (this == p->l) {
 			p->l = r;
-		else
+		} else {
 			p->r = r;
+		}
 	}
 }
 
@@ -143,16 +145,16 @@ inline void RedBlackTreeNode::RotateR() {
 	l->r = this;
 
 	if (p) {
-		if (this == p->l)
+		if (this == p->l) {
 			p->l = l;
-		else
+		} else {
 			p->r = l;
+		}
 	}
 }
 
 inline void RedBlackTreeNode::Swap(Self* x, Self* y) {
-	RHO__debug_if(!x || !y)
-		RHO__throw__local("nullptr");
+	RHO__debug_if(!x || !y) { RHO__throw__local("nullptr"); }
 
 	if (x->p == y) {
 		Self* temp(x);
@@ -165,10 +167,11 @@ inline void RedBlackTreeNode::Swap(Self* x, Self* y) {
 		Self* yr(y->r);
 
 		if (y->p = x->p) {
-			if (x == x->p->l)
+			if (x == x->p->l) {
 				y->p->l = y;
-			else
+			} else {
 				y->p->r = y;
+			}
 		}
 
 		if (x->l == (x->p = y)) {
@@ -192,17 +195,19 @@ inline void RedBlackTreeNode::Swap(Self* x, Self* y) {
 	Self* yr(y->r);
 
 	if (x->p = yp) {
-		if (y == yp->l)
+		if (y == yp->l) {
 			yp->l = x;
-		else
+		} else {
 			yp->r = x;
+		}
 	}
 
 	if (y->p = xp) {
-		if (x == xp->l)
+		if (x == xp->l) {
 			xp->l = y;
-		else
+		} else {
 			xp->r = y;
+		}
 	}
 
 	if (x->l = yl) { yl->p = x; }
@@ -212,21 +217,17 @@ inline void RedBlackTreeNode::Swap(Self* x, Self* y) {
 	if (y->r = xr) { xr->p = y; }
 }
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
 inline void RedBlackTreeNode::InsertL(Self* node) {
-	RHO__debug_if(this->l)
-		RHO__throw__local("this->l exist")
-
-		((node->p = this)->l = node)->color = red;
+	RHO__debug_if(this->l) { RHO__throw__local("this->l exist"); }
+	((node->p = this)->l = node)->color = red;
 	if (this->color == red) { node->InsertFix(); }
 }
 
 inline void RedBlackTreeNode::InsertR(Self* node) {
-	RHO__debug_if(this->r)
-		RHO__throw__local("this->r exist")
-
-		((node->p = this)->r = node)->color = red;
+	RHO__debug_if(this->r) { RHO__throw__local("this->r exist"); }
+	((node->p = this)->r = node)->color = red;
 	if (this->color == red) { node->InsertFix(); }
 }
 
@@ -273,16 +274,16 @@ inline void RedBlackTreeNode::InsertFix() {
 	}
 }
 
-#////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
 
-inline void RedBlackTreeNode::Remove() {
+inline void RedBlackTreeNode::Release() {
 	if (!this->p && !this->l && !this->r) { return; }
 
 	Self* n(this);
 	Self* m;
 
 	if (n->l && n->r) {
-		for (m = n->l; m->r; m = m->r);
+		for (m = n->l; m->r; m = m->r) {};
 
 		Swap(n, m);
 
@@ -295,35 +296,40 @@ inline void RedBlackTreeNode::Remove() {
 	if (n->color == black) {
 		if ((m = n->l) || (m = n->r)) {
 			if (m->p = n->p) {
-				if (n == m->p->l)
+				if (n == m->p->l) {
 					m->p->l = m;
-				else
+				} else {
 					m->p->r = m;
+				}
 			}
 
-			if (m->color == black)
+			if (m->color == black) {
 				m->ReleaseFix();
-			else
+			} else {
 				m->color = black;
+			}
 		} else {
 			n->ReleaseFix();
 
-			if (n == n->p->l)
+			if (n == n->p->l) {
 				n->p->l = nullptr;
-			else
+			} else {
 				n->p->r = nullptr;
+			}
 		}
 	} else {
 		if ((m = n->l) || (m = n->r)) {
-			if (n == (m->p = n->p)->l)
+			if (n == (m->p = n->p)->l) {
 				m->p->l = m;
-			else
+			} else {
 				m->p->r = m;
+			}
 		} else {
-			if (n == n->p->l)
+			if (n == n->p->l) {
 				n->p->l = nullptr;
-			else
+			} else {
 				n->p->r = nullptr;
+			}
 		}
 	}
 

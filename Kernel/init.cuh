@@ -6,7 +6,6 @@
 #include "../Base/sort.cuh"
 #include "../Calculus/Calculus.cuh"
 #include "../Container/Array.cuh"
-#include "../Container/EnumerateVector.cuh"
 #include "../Container/BidirectionalNode.cuh"
 #include "../Container/List.cuh"
 #include "../Container/Map.cuh"
@@ -49,7 +48,6 @@ class Spinlock;
 
 #///////////////////////////////////////////////////////////////////////////////
 
-class Manager;
 class Space;
 class Object;
 

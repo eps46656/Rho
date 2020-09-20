@@ -7,8 +7,6 @@
 
 #include "Base.cuh"
 
-#include "Manager.cuh"
-
 #include "Object.cuh"
 #include "Space.cuh"
 

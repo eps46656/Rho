@@ -3,7 +3,6 @@
 
 namespace rho {
 
-ComponentLight::ComponentLight(Object* object):
-	Component(Type::light, object) {}
+ComponentLight::ComponentLight(): Component(Type::light) {}
 
 }

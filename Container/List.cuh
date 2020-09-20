@@ -31,7 +31,7 @@ public:
 			return this->node_ == iter.node_;
 		}
 		RHO__cuda bool operator!=(const Iterator_& iter) const {
-			this->node_ != iter.node_;
+			return this->node_ != iter.node_;
 		}
 
 		RHO__cuda T_t& operator*() const { return *this->node_->value; }

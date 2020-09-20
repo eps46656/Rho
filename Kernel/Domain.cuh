@@ -15,8 +15,8 @@ public:
 
 	const Type type;
 
-	RHO__cuda virtual Space* root() const = 0;
-	RHO__cuda virtual dim_t dim_r() const;
+	RHO__cuda virtual const Space* root() const = 0;
+	RHO__cuda virtual dim_t root_dim() const;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -25,7 +25,7 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda virtual bool Refresh() const = 0;
+	RHO__cuda virtual const Domain* Refresh() const = 0;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -60,7 +60,7 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	// RHO__cuda Domain* Equivalence() const;
+	// RHO__cuda virtual const Domain* Equivalence() const;
 	// simplify self then return a equivalent domain, aim ot optimize
 	// return nullptr represent self domain is null
 	// return self pointer represent self domain has been simplified

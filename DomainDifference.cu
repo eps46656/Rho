@@ -5,44 +5,48 @@
 
 namespace rho {
 
-Space* DomainDifference::root() const {
-	Space* r(this->domain_a_ ? this->domain_a_->root() : nullptr);
+const Space* DomainDifference::root() const {
+	const Space* r(this->domain_a_ ? this->domain_a_->root() : nullptr);
 
 	if (this->domain_a_) {}
 
-	Space* space[]{ this->domain_a_->root(), this->domain_b_->root() };
+	const Space* space[]{ this->domain_a_->root(), this->domain_b_->root() };
 	return (space[0] == space[1]) ? space[0] : nullptr;
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-Domain* DomainDifference::domain_a() const { return this->domain_a_; }
-Domain* DomainDifference::domain_b() const { return this->domain_b_; }
+Domain* DomainDifference::domain_a() const { return this->domain_a_raw_; }
+Domain* DomainDifference::domain_b() const { return this->domain_b_raw_; }
 
 #///////////////////////////////////////////////////////////////////////////////
 
 void DomainDifference::doamin_a(Domain* domain_a) {
-	this->domain_a_ = domain_a;
+	this->domain_a_raw_ = domain_a;
 }
 void DomainDifference::doamin_b(Domain* domain_b) {
-	this->domain_b_ = domain_b;
+	this->domain_b_raw_ = domain_b;
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
 DomainDifference::DomainDifference(Domain* domain_a, Domain* domain_b):
-	domain_a_(domain_a), domain_b_(domain_b) {
-	RHO__debug_if(domain_a && domain_b &&
-				  (domain_a->root() != domain_b->root())) {
-		RHO__throw__local("root error");
-	}
-}
+	domain_a_raw_(domain_a), domain_b_raw_(domain_b) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainDifference::Refresh() const {
-	return this->domain_a_ && this->domain_a_->Refresh() && this->domain_b_ &&
-		   this->domain_b_->Refresh();
+const Domain* DomainDifference::Refresh() const {
+	if (!this->domain_a_raw_ ||
+		!(this->domain_a_ = this->domain_a_raw_->Refresh())) {
+		return nullptr;
+	}
+
+	if (!this->domain_b_raw_ ||
+		!(this->domain_b_ = this->domain_b_raw_->Refresh())) {
+		return this->domain_a_;
+	}
+
+	return this;
 }
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -61,9 +65,6 @@ size_t DomainDifference::RayCastComplexity() const {
 }
 
 RayCastData DomainDifference::RayCast(const Ray& ray) const {
-	if (!this->domain_a_) { return RayCastData(); }
-	if (!this->domain_b_) { return this->domain_a_->RayCast(ray); }
-
 	RayCastDataVector rcdv_b;
 	size_t rcdv_b_size(this->domain_b_->RayCastFull(rcdv_b, ray));
 
@@ -117,13 +118,6 @@ RayCastData DomainDifference::RayCast(const Ray& ray) const {
 
 void DomainDifference::RayCastPair(RayCastDataPair& rcdp,
 								   const Ray& ray) const {
-	if (!this->domain_a_) { return; }
-
-	if (!this->domain_b_) {
-		this->domain_a_->RayCastPair(rcdp, ray);
-		return;
-	}
-
 	RayCastDataVector rcdv_b;
 	size_t rcdv_b_size(this->domain_b_->RayCastFull(rcdv_b, ray));
 
@@ -131,8 +125,6 @@ void DomainDifference::RayCastPair(RayCastDataPair& rcdp,
 		case 0: this->domain_a_->RayCastPair(rcdp, ray); return;
 		case RHO__Domain__RayCastFull_in_phase: return;
 	}
-
-	// Print() << rcdv_b_size << "\n";
 
 	bool rcdv_b_to(rcdv_b[rcdv_b_size - 1]->phase.to());
 
@@ -212,14 +204,9 @@ void DomainDifference::RayCastPair(RayCastDataPair& rcdp,
 			return;
 		}
 	}
-
-	return;
 }
 
 size_t DomainDifference::RayCastFull(RayCastData* dst, const Ray& ray) const {
-	if (!this->domain_a_) { return 0; }
-	if (!this->domain_b_) { return this->domain_a_->RayCastFull(dst, ray); }
-
 	RayCastDataVector rcdv_b;
 	size_t rcdv_b_size(this->domain_b_->RayCastFull(rcdv_b, ray));
 
@@ -231,13 +218,13 @@ size_t DomainDifference::RayCastFull(RayCastData* dst, const Ray& ray) const {
 	bool rcdv_b_to(rcdv_b[rcdv_b_size - 1]->phase.to());
 
 	RayCastDataVector rcdv_a;
-	size_t rcdv_a_size(this->domain_a_->RayCastFull(rcdv_a, ray));
+	uint rcdv_a_size(this->domain_a_->RayCastFull(rcdv_a, ray));
 
 	if (rcdv_a_size == 0) { return 0; }
 
-	size_t i(0);
-	size_t j(0);
-	size_t size(0);
+	uint i(0);
+	uint j(0);
+	uint size(0);
 
 	while (i != rcdv_a_size) {
 		if (rcdv_a[i] < rcdv_b[j]) {

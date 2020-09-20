@@ -33,14 +33,16 @@ public:
 	RHO__cuda Vector(size_t size):
 		size_(0), capacity_(size),
 		data_(this->capacity_ ? Malloc<T>(size) : nullptr) {
-		for (; this->size_ != size; ++this->size_)
+		for (; this->size_ != size; ++this->size_) {
 			new (this->data_ + this->size_) T();
+		}
 	}
 
 	RHO__cuda Vector(const Vector& vector):
 		size_(0), capacity_(vector.size_), data_(Malloc<T>(this->capacity_)) {
-		for (; this->size_ != vector.size_; ++this->size_)
+		for (; this->size_ != vector.size_; ++this->size_) {
 			new (this->data_ + this->size_) T(vector.data_[this->size_]);
+		}
 	}
 
 	RHO__cuda Vector(Vector&& vector):
@@ -53,7 +55,9 @@ public:
 	RHO__cuda Vector(Iterator begin, Iterator end):
 		size_(end - begin), capacity_(this->size_),
 		data_(this->capacity_ ? Malloc<T>(this->capacity_) : nullptr) {
-		for (T* i(this->data_); begin != end; ++begin, ++i) new (i) T(*begin);
+		for (T* i(this->data_); begin != end; ++begin, ++i) {
+			new (i) T(*begin);
+		}
 	}
 
 	RHO__cuda ~Vector() { rho::Delete(this->size_, this->data_); }
@@ -79,21 +83,22 @@ public:
 			this->data_ =
 				Malloc<T>(this->size_ = this->capacity_ = vector.size_);
 
-			for (; i != this->size_; ++i)
+			for (; i != this->size_; ++i) {
 				new (this->data_ + i) T(vector.data_[i]);
+			}
 
 			return *this;
 		}
 
 		if (this->size_ < vector.size_) {
-			for (; i != this->size_; ++i) this->data_[i] = vector.data_[i];
+			for (; i != this->size_; ++i) { this->data_[i] = vector.data_[i]; }
 
-			for (; i != vector.size_; ++i)
+			for (; i != vector.size_; ++i) {
 				new (this->data_ + i) T(vector.data_[i]);
+			}
 		} else {
-			for (; i != vector.size_; ++i) this->data_[i] = vector.data_[i];
-
-			for (; i != this->size_; ++i) this->data_[i].~T();
+			for (; i != vector.size_; ++i) { this->data_[i] = vector.data_[i]; }
+			for (; i != this->size_; ++i) { this->data_[i].~T(); }
 		}
 
 		this->size_ = vector.size_;
@@ -120,8 +125,9 @@ public:
 		if (this == &vector) { return true; }
 		if (this->size_ != vector.size_) { return false; }
 
-		for (size_t i(0); i != this->size_; ++i)
+		for (size_t i(0); i != this->size_; ++i) {
 			if (this->data_[i] != vector.data_[i]) { return false; }
+		}
 
 		return true;
 	}
@@ -131,8 +137,9 @@ public:
 		if (this == &vector) { return false; }
 		if (this->size_ != vector.size_) { return true; }
 
-		for (size_t i(0); i != this->size_; ++i)
+		for (size_t i(0); i != this->size_; ++i) {
 			if (this->data_[i] != vector.data_[i]) { return true; }
+		}
 
 		return false;
 	}
@@ -146,34 +153,40 @@ public:
 	}
 
 	RHO__cuda T& at(size_t index) {
-		RHO__debug_if(this->size_ <= index) RHO__throw__local("index error");
+		RHO__debug_if(this->size_ <= index) {
+			RHO__throw__local("index error");
+		}
+
 		return this->data_[index];
 	}
 
 	RHO__cuda const T& at(size_t index) const {
-		RHO__debug_if(this->size_ <= index) RHO__throw__local("index error");
+		RHO__debug_if(this->size_ <= index) {
+			RHO__throw__local("index error");
+		}
+
 		return this->data_[index];
 	}
 
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda T& front() {
-		RHO__debug_if(!this->size_) RHO__throw__local("index error");
+		RHO__debug_if(!this->size_) { RHO__throw__local("index error"); }
 		return *this->data_;
 	}
 
 	RHO__cuda const T& front() const {
-		RHO__debug_if(!this->size_) RHO__throw__local("index error");
+		RHO__debug_if(!this->size_) { RHO__throw__local("index error"); }
 		return *this->data_;
 	}
 
 	RHO__cuda T& back() {
-		RHO__debug_if(!this->size_) RHO__throw__local("index error");
+		RHO__debug_if(!this->size_) { RHO__throw__local("index error"); }
 		return this->data_[this->size_ - 1];
 	}
 
 	RHO__cuda const T& back() const {
-		RHO__debug_if(!this->size_) RHO__throw__local("index error");
+		RHO__debug_if(!this->size_) { RHO__throw__local("index error"); }
 		return this->data_[this->size_ - 1];
 	}
 
@@ -191,12 +204,16 @@ public:
 
 	template<typename... Args>
 	RHO__cuda Iterator Insert(Iterator index, Args&&... args) {
-		RHO__debug_if(!this->valid_(index)) RHO__throw__local("index error");
+		RHO__debug_if(!this->valid_(index)) {
+			RHO__throw__local("index error");
+		}
 
 		if (this->size_ == this->capacity_) {
-			if (this->capacity_) this->capacity_ <<= 1;
-			else
+			if (this->capacity_) {
+				this->capacity_ <<= 1;
+			} else {
 				++this->capacity_;
+			}
 
 			T* data(Malloc<T>(this->capacity_));
 
@@ -255,7 +272,7 @@ public:
 
 			T* r(j);
 
-			for (; begin != end; ++begin, ++j) new (j) T(*begin);
+			for (; begin != end; ++begin, ++j) { new (j) T(*begin); }
 
 			for (T* end(this->data_ + this->size_); i != end; ++i, ++j) {
 				new (j) T(Move(*i));
@@ -276,7 +293,7 @@ public:
 			i->~T();
 		}
 
-		for (++i; begin != end; ++begin, ++i) new (i) T(*begin);
+		for (++i; begin != end; ++begin, ++i) { new (i) T(*begin); }
 
 		this->size_ += d_size;
 
@@ -286,7 +303,7 @@ public:
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda void Pop() {
-		RHO__debug_if(!this->size_) RHO__throw__local("index error");
+		RHO__debug_if(!this->size_) { RHO__throw__local("index error"); }
 
 		--this->size_;
 		this->data_[this->size_].~T();
@@ -312,11 +329,13 @@ public:
 	}
 
 	RHO__cuda T* Delete(T* index) {
-		RHO__debug_if(!this->valid_(index)) RHO__throw__local("index error");
+		RHO__debug_if(!this->valid_(index)) {
+			RHO__throw__local("index error");
+		}
 
 		T* end(this->data_ + (this->size_ -= 1));
 
-		for (T* i(index); i != end; ++i) *i = Move(i[1]);
+		for (T* i(index); i != end; ++i) { *i = Move(i[1]); }
 
 		end->~T();
 
@@ -324,8 +343,9 @@ public:
 	}
 
 	RHO__cuda T* Erase(T* begin, T* end) {
-		RHO__debug_if(!this->valid_(begin, end))
+		RHO__debug_if(!this->valid_(begin, end)) {
 			RHO__throw__local("index error");
+		}
 
 		if (begin == end) { return begin; }
 
@@ -343,8 +363,9 @@ public:
 	}
 
 	RHO__cuda T* Replace(T* data, size_t capacity) {
-		RHO__debug_if(capacity < this->size_)
+		RHO__debug_if(capacity < this->size_) {
 			RHO__throw__local("capacity error");
+		}
 
 		for (size_t i(0); i != this->size_; ++i) {
 			new (data + i) T(Move(this->data_[i]));

@@ -14,10 +14,12 @@ void Camera::RenderData::Clear() const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-Space* Camera::root() const { return this->ref_->root(); }
-Space* Camera::ref() const { return this->ref_; }
+Space* Camera::ref() { return this->ref_; }
+const Space* Camera::ref() const { return this->ref_; }
 
-size_t Camera::dim_r() const { return this->ref_->dim_r(); }
+const Space* Camera::root() const { return this->ref_->root(); }
+
+dim_t Camera::root_dim() const { return this->ref_->root_dim(); }
 
 size_t Camera::image_height() const { return this->image_height_; }
 size_t Camera::image_width() const { return this->image_width_; }
@@ -34,24 +36,19 @@ void Camera::set_max_depth(size_t max_depth) { this->max_depth_ = max_depth; }
 size_t Camera::render_data_size() const { return this->render_data_size_; }
 Camera::RenderData* Camera::render_data() const { return this->render_data_; }
 
-ComponentCollider::Material& Camera::void_cmpt_collider_material() {
-	return this->void_cmpt_collider_material_;
-}
+Camera::Material& Camera::void_material() { return this->void_material_; }
 
-const ComponentCollider::Material& Camera::void_cmpt_collider_material() const {
-	return this->void_cmpt_collider_material_;
+const Camera::Material& Camera::void_material() const {
+	return this->void_material_;
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-void Camera::AddCmptCollider(ComponentCollider* cmpt_collider) {
-	this->cmpt_collider__ray_cast_order_.Push(cmpt_collider);
-	this->cmpt_collider__detect_order_.Push(cmpt_collider);
+void Camera::AddCollider(const Collider* collider) {
+	this->collider_.Insert(collider);
 }
 
-void Camera::AddCmptLight(ComponentLight* cmpt_light) {
-	this->cmpt_light_.Push(cmpt_light);
-}
+void Camera::AddLight(const Light* light) { this->light_.Push(light); }
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -70,6 +67,18 @@ void Camera::RenderReady(size_t size) const {
 	CameraRenderReady_<<<1, 1>>>(this, size);
 }
 
+struct ColliderCompare {
+	RHO__cuda bool operator()(const Camera::Collider* x,
+							  const Camera::Collider* y) const {
+		if (x == y) { return false; }
+		size_t a(x->domain()->RayCastComplexity());
+		size_t b(y->domain()->RayCastComplexity());
+		if (a < b) { return true; }
+		if (b < a) { return false; }
+		return x < y;
+	}
+};
+
 void Camera::Render(size_t block_pos_h, size_t block_pos_w, size_t block_size_h,
 					size_t block_size_w) const {
 	CameraRenderMain_<<<32, 1024>>>(this, block_pos_h, block_pos_w,
@@ -77,61 +86,50 @@ void Camera::Render(size_t block_pos_h, size_t block_pos_w, size_t block_size_h,
 }
 
 RHO__glb void CameraRenderReady_(const Camera* camera, size_t size) {
-	RHO__debug_if(!camera->void_cmpt_collider_material_.Check()) {
+	RHO__debug_if(!camera->void_material_.Check()) {
 		RHO__throw__local("material error");
 	}
 
-	camera->ref_->RefreshSelf();
+	camera->ref_->Refresh();
 
-	for (size_t i(0); i != camera->cmpt_light_.size(); ++i) {
+	for (size_t i(0); i != camera->light_.size(); ++i) {
 #if RHO__debug_flag
-		for (size_t j(i + 1); j != camera->cmpt_light_.size(); ++j) {
-			if (camera->cmpt_light_[i] == camera->cmpt_light_[j]) {
+		for (size_t j(i + 1); j != camera->light_.size(); ++j) {
+			if (camera->light_[i] == camera->light_[j]) {
 				RHO__throw__local("repeat cmpt light");
 			}
 		}
 
-		if (!camera->cmpt_light_[i]->Refresh()) {
+		if (!camera->light_[i]->Refresh()) {
 			RHO__throw__local("cmpt light refresh error");
 		}
 #else
-		camera->cmpt_light_[i]->Refresh();
+		camera->light_[i]->Refresh();
 #endif
 	}
 
 	{
-		// compare cmpt_collider__ray_cast_order_ and
-		// cmpt_collider__detect_order_
-		// to ensure their elements are all same
-		// and refresh them
+		camera->collider__detect_order_.Reserve(camera->collider_.size());
+		camera->collider__ray_cast_order_.Reserve(camera->collider_.size());
 
-		size_t size(camera->cmpt_collider__ray_cast_order_.size());
+		RBT<const Camera::Collider*, ColliderCompare> collider_rbt;
 
-		RHO__debug_if(size != camera->cmpt_collider__detect_order_.size()) {
-			RHO__throw__local("size error");
-		}
+		{
+			auto iter(camera->collider_.begin());
 
-		cntr::Vector<ComponentCollider*> temp(
-			camera->cmpt_collider__ray_cast_order_);
-		Sort(temp.begin(), temp.end());
-
-		for (size_t i(0); i != size; ++i) {
-			if (BinarySearch(temp, size,
-							 camera->cmpt_collider__detect_order_[i]) == size) {
-				RHO__throw__local("not found error");
-			}
-
-			if (!camera->cmpt_collider__detect_order_[i]->Refresh()) {
-				RHO__throw__local("refresh error");
+			for (auto end(camera->collider_.end()); iter != end; ++iter) {
+				if ((*iter)->Refresh()) { collider_rbt.Insert(*iter); }
 			}
 		}
 
-		Sort(camera->cmpt_collider__ray_cast_order_.begin(),
-			 camera->cmpt_collider__ray_cast_order_.end(),
-			 [](const ComponentCollider* x, const ComponentCollider* y) {
-				 return x->domain()->RayCastComplexity() <
-						y->domain()->RayCastComplexity();
-			 });
+		{
+			auto iter(collider_rbt.begin());
+
+			for (auto end(collider_rbt.end()); iter != end; ++iter) {
+				camera->collider__detect_order_.Push(*iter);
+				camera->collider__ray_cast_order_.Push(*iter);
+			}
+		}
 	}
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -142,16 +140,19 @@ RHO__glb void CameraRenderReady_(const Camera* camera, size_t size) {
 						camera->ref_->root_axis() + RHO__max_dim * 2 };
 
 #pragma unroll
-		for (dim_t i(0); i != RHO__max_dim; ++i)
+		for (dim_t i(0); i != RHO__max_dim; ++i) {
 			camera->direct_f_[i] = a[0][i] - a[1][i] - a[2][i];
+		}
 
 #pragma unroll
-		for (dim_t i(0); i != RHO__max_dim; ++i)
+		for (dim_t i(0); i != RHO__max_dim; ++i) {
 			camera->direct_h_[i] = a[1][i] * 2 / camera->image_height_;
+		}
 
 #pragma unroll
-		for (dim_t i(0); i != RHO__max_dim; ++i)
+		for (dim_t i(0); i != RHO__max_dim; ++i) {
 			camera->direct_w_[i] = a[2][i] * 2 / camera->image_width_;
+		}
 	}
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -182,9 +183,9 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 	RayCastDataPair rcdp;
 	Vec point[2];
 
-	ComponentCollider* collider[3];
+	const Camera::Collider* collider[3];
 
-	const ComponentCollider::Material* material[2];
+	const Camera::Material* material[2];
 
 	Texture::Data texture_data;
 
@@ -202,10 +203,11 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 #define RHO__static_task_size 10
 
 	Camera::Task static_task[RHO__static_task_size];
-	// this task is to avoid using New<Camera::Task>()
+	// static alloc task to reduce the using number of New<Camera::Task>()
 
-	for (size_t i(0); i != RHO__static_task_size; ++i)
+	for (size_t i(0); i != RHO__static_task_size; ++i) {
 		task_node.PushNext(static_task + i);
+	}
 
 	Camera::Task* task;
 	Camera::Task* next_task;
@@ -274,25 +276,21 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 		{
 			Num pre_t(-1);
 
-			for (size_t i(0);
-				 i != camera->cmpt_collider__ray_cast_order_.size(); ++i) {
-				camera->cmpt_collider__ray_cast_order_[i]
-					->domain()
-					->RayCastPair(rcdp, task->ray);
+			for (size_t i(0); i != camera->collider__ray_cast_order_.size();
+				 ++i) {
+				camera->collider__ray_cast_order_[i]->domain()->RayCastPair(
+					rcdp, task->ray);
 
 				if (rcdp[0]) {
 					if (pre_t != rcdp[0]->t) {
 						pre_t = rcdp[0]->t;
-						collider[2] = camera->cmpt_collider__ray_cast_order_[i];
+						collider[2] = camera->collider__ray_cast_order_[i];
 					}
 				}
 			}
 		}
 
-		if (!rcdp[0]) {
-			/*goto function_head; */
-			continue;
-		}
+		if (!rcdp[0]) { continue; }
 
 		task->ray.point(point[0], rcdp[0]->t);
 
@@ -307,16 +305,15 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 
 		collider[0] = nullptr;
 
-		for (size_t i(0); i != camera->cmpt_collider__detect_order_.size();
-			 ++i) {
-			if (camera->cmpt_collider__detect_order_[i]->Contain(temp)) {
-				collider[0] = camera->cmpt_collider__detect_order_[i];
+		for (size_t i(0); i != camera->collider__detect_order_.size(); ++i) {
+			if (camera->collider__detect_order_[i]->Contain(temp)) {
+				collider[0] = camera->collider__detect_order_[i];
 				break;
 			}
 		}
 
-		material[0] = collider[0] ? &collider[0]->material()
-								  : &camera->void_cmpt_collider_material();
+		material[0] =
+			collider[0] ? &collider[0]->material() : &camera->void_material();
 
 		// get collider[0]
 
@@ -328,7 +325,7 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 
 		// object's material are initialized to default material
 
-		d_dist = abs(camera->dim_r(), task->ray.direct) * rcdp[0]->t;
+		d_dist = abs(camera->root_dim(), task->ray.direct) * rcdp[0]->t;
 
 		if (render_data->dist.eq<0>()) { render_data->dist = d_dist; }
 
@@ -345,8 +342,9 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 		rcdp[0]->domain->GetTodTan(tod.tan, rcdp[0], task->ray.direct);
 
 #pragma unroll
-		for (dim_t i(0); i != RHO__max_dim; ++i)
+		for (dim_t i(0); i != RHO__max_dim; ++i) {
 			tod.orth[i] = task->ray.direct[i] - tod.tan[i];
+		}
 
 		texture_data = collider[2]->texture()->GetData(point[0], tod.tan);
 
@@ -359,6 +357,8 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 
 		// transmission
 
+		//#if false
+
 		if (transmittance[0].ne<0>() || transmittance[1].ne<0>() ||
 			transmittance[2].ne<0>()) {
 			task->ray.point(temp, rcdp[1] ? ((rcdp[0]->t + rcdp[1]->t) / 2)
@@ -366,16 +366,16 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 
 			collider[1] = nullptr;
 
-			for (size_t i(0); i != camera->cmpt_collider__detect_order_.size();
+			for (size_t i(0); i != camera->collider__detect_order_.size();
 				 ++i) {
-				if (camera->cmpt_collider__detect_order_[i]->Contain(temp)) {
-					collider[1] = camera->cmpt_collider__detect_order_[i];
+				if (camera->collider__detect_order_[i]->Contain(temp)) {
+					collider[1] = camera->collider__detect_order_[i];
 					break;
 				}
 			}
 
 			material[1] = collider[1] ? &collider[1]->material()
-									  : &camera->void_cmpt_collider_material();
+									  : &camera->void_material();
 
 			if (material[1]->transmittance[0].ne<0>() ||
 				material[1]->transmittance[1].ne<0>() ||
@@ -436,8 +436,9 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 		}
 
 #pragma unroll
-		for (dim_t i(0); i != RHO__max_dim; ++i)
+		for (dim_t i(0); i != RHO__max_dim; ++i) {
 			reflection_vector[i] = tod.tan[i] - tod.orth[i];
+		}
 
 		// reflection
 
@@ -495,7 +496,7 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 			}
 		}
 
-		for (size_t i(0); i != camera->cmpt_light_.size(); ++i) {
+		for (size_t i(0); i != camera->light_.size(); ++i) {
 			// influence caused by position is processed in
 			// ComponentLight::intensity point tod reflection_vector ray
 			// pre_length
@@ -506,8 +507,8 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 			// texture transmittance
 			// refraction transmittance
 
-			Num3 intensity(camera->cmpt_light_[i]->intensity(
-				point[0], tod, camera->cmpt_collider__ray_cast_order_,
+			Num3 intensity(camera->light_[i]->intensity(
+				point[0], tod, camera->collider__ray_cast_order_,
 				reflection_vector, texture_data, task->ray, task->dist));
 
 			render_data->intensity[0] += texture_data.color[0] / 255 *
@@ -532,4 +533,5 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 		n = m;
 	}
 }
+
 }

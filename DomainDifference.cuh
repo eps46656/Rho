@@ -16,7 +16,7 @@ public:
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda Space* root() const override;
+	RHO__cuda const Space* root() const override;
 
 	RHO__cuda Domain* domain_a() const;
 	RHO__cuda Domain* domain_b() const;
@@ -31,7 +31,7 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda bool Refresh() const override;
+	RHO__cuda const Domain* Refresh() const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -52,8 +52,11 @@ public:
 							 const Num* root_direct) const override;
 
 private:
-	Domain* domain_a_;
-	Domain* domain_b_;
+	Domain* domain_a_raw_;
+	Domain* domain_b_raw_;
+
+	mutable const Domain* domain_a_;
+	mutable const Domain* domain_b_;
 };
 
 }

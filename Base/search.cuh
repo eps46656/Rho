@@ -10,7 +10,7 @@ template<typename Iterator, typename Index,
 RHO__cuda Iterator LinearSearch(Iterator begin, Iterator end,
 								const Index& index,
 								Compare compare = Compare()) {
-	while (begin != end && compare(*begin, index)) { ++begin; }
+	while (begin != end && !compare(*begin, index)) { ++begin; }
 	return begin;
 }
 
@@ -81,6 +81,16 @@ RHO__cuda bool Contain(Iterator begin, Iterator end, const Index& index,
 					   Compare compare = Compare()) {
 	for (; begin != end; ++begin) {
 		if (compare(*begin, index)) { return true; }
+	}
+
+	return false;
+}
+
+template<typename Src, typename Index, typename Compare = op::lt<Src>>
+RHO__cuda bool ContainLinear(size_t size, Src&& src, const Index& index,
+							 Compare compare = Compare()) {
+	for (size_t i(0); i != size; ++i) {
+		if (compare(src[i], index)) { return true; }
 	}
 
 	return false;

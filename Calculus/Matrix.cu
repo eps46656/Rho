@@ -58,8 +58,9 @@ void Matrix::set_col_dim(dim_t col_dim) { this->col_dim_ = col_dim; }
 void Matrix::set_row_dim(dim_t row_dim) { this->row_dim_ = row_dim; }
 
 void Matrix::set_dim(dim_t col_dim, dim_t row_dim) {
-	RHO__debug_if(RHO__max_dim < col_dim || RHO__max_dim < row_dim)
+	RHO__debug_if(RHO__max_dim < col_dim || RHO__max_dim < row_dim) {
 		RHO__throw__local("capacity error");
+	}
 
 	this->col_dim_ = col_dim;
 	this->row_dim_ = row_dim;
@@ -70,7 +71,6 @@ void Matrix::set_dim(dim_t col_dim, dim_t row_dim) {
 Matrix::Matrix(): col_dim_(0), row_dim_(0) {}
 
 Matrix::Matrix(dim_t col_dim, dim_t row_dim):
-
 	col_dim_(col_dim), row_dim_(row_dim) {}
 
 Matrix::Matrix(const Matrix& matrix):
@@ -105,7 +105,7 @@ void Matrix::identity(Num* dst, dim_t dim) {
 }
 
 void Matrix::identity(Matrix& dst, dim_t dim) {
-	RHO__debug_if(RHO__max_dim < dim) RHO__throw__local("dim error");
+	RHO__debug_if(RHO__max_dim < dim) { RHO__throw__local("dim error"); }
 
 	dst.col_dim_ = dst.row_dim_ = dim;
 

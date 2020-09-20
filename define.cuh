@@ -12,7 +12,7 @@
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 
-#define RHO__debug_flag true
+#define RHO__debug_flag false
 
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
@@ -24,8 +24,8 @@
 
 	#define RHO__throw__(type, func, desc)                                     \
 		{                                                                      \
-			rho::Print() << __LINE__ << "\n"                                   \
-						 << type << "::" << func << "\n\t" << desc;            \
+			rho::Print() << __LINE__ << " " << type << "::" << func << "\n\t"  \
+						 << desc << "\n";                                      \
 			assert(false);                                                     \
 		}
 #else
@@ -84,6 +84,7 @@
 namespace rho {
 
 using nullptr_t = decltype(nullptr);
+using uint = unsigned int;
 using size_t = decltype(sizeof(char));
 using diff_t = decltype((char*)(0) - (char*)(0));
 using dim_t = unsigned int;
@@ -163,7 +164,7 @@ struct Print {};
 template<size_t size> struct Line {};
 
 template<size_t size>
-RHO__cuda inline Print operator<<(Print p, const Line<size>& line) {
+RHO__cuda Print operator<<(Print p, const Line<size>& line) {
 #pragma unroll
 	for (size_t i(0); i != size; ++i) { ::printf("//"); }
 
@@ -181,7 +182,7 @@ RHO__cuda inline Print operator<<(Print p, char x) {
 }
 
 RHO__cuda inline Print operator<<(Print p, const char x[]) {
-	::printf(x);
+	::printf("%s", x);
 	return Print();
 }
 

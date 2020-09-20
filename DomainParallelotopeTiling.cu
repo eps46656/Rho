@@ -11,26 +11,31 @@ DomainParallelotopeTiling::DomainParallelotopeTiling(Space* ref):
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainParallelotopeTiling::Refresh() const {
-	if (!this->ref()->RefreshSelf()) { return false; }
+const Domain* DomainParallelotopeTiling::Refresh() const {
+	if (!this->ref_) { return nullptr; }
 
-	this->tod_matrix_.set_dim(this->dim(), this->dim_r());
-	Copy<RHO__max_dim_sq>(this->tod_matrix_, this->ref()->root_axis());
-	Tod::TanMatrix(this->tod_matrix_);
+	this->ref_->Refresh();
 
-	return true;
+	Tod::TanMatrix(this->ref_->dim(), this->ref_->root_dim(), this->tod_matrix_,
+				   this->ref_->root_axis());
+
+	return this;
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
 bool DomainParallelotopeTiling::Contain_s(const Num* point) const {
+	for (dim_t i(this->ref_->dim()); i != this->ref_->root_dim(); ++i) {
+		if (point[i].ne<0>()) { return false; }
+	}
+
 	return true;
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
 size_t DomainParallelotopeTiling::RayCastComplexity() const {
-	return this->dim_cr() * 5;
+	return this->ref_->root_codim() * 5;
 }
 
 RayCastData DomainParallelotopeTiling::RayCast(const Ray& ray) const {
@@ -91,12 +96,12 @@ Num DomainParallelotopeTiling::RayCast_(const Ray& ray) const {
 	Vec origin;
 	Vec direct;
 
-	this->ref()->MapPointFromRoot_rr(origin, ray.origin);
-	this->ref()->MapVectorFromRoot_rr(direct, ray.direct);
+	this->ref_->MapPointFromRoot_rr(origin, ray.origin);
+	this->ref_->MapVectorFromRoot_rr(direct, ray.direct);
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (dim_t i(this->dim()); i != this->dim_r(); ++i) {
+	for (dim_t i(this->ref_->dim()); i != this->ref_->root_dim(); ++i) {
 		if (direct[i].eq<0>()) {
 			if (origin[i].eq<0>()) { continue; }
 			return 0;
@@ -106,7 +111,7 @@ Num DomainParallelotopeTiling::RayCast_(const Ray& ray) const {
 
 		if (t.le<0>()) { return 0; }
 
-		for (++i; i != this->dim_r(); ++i) {
+		for (++i; i != this->ref_->root_dim(); ++i) {
 			if (origin[i] != t * direct[i]) { return 0; }
 		}
 
@@ -120,7 +125,8 @@ Num DomainParallelotopeTiling::RayCast_(const Ray& ray) const {
 
 void DomainParallelotopeTiling::GetTodTan(Num* dst, const RayCastData& rcd,
 										  const Num* root_direct) const {
-	dot(this->dim_r(), this->dim_r(), dst, root_direct, this->tod_matrix_);
+	dot(this->ref_->root_dim(), this->ref_->root_dim(), dst, root_direct,
+		this->tod_matrix_);
 }
 
 }

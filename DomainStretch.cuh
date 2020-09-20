@@ -22,13 +22,16 @@ public:
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda Space* ref() const;
-	RHO__cuda Domain* domain() const;
+	RHO__cuda Space* ref();
+	RHO__cuda const Space* ref() const;
 
-	RHO__cuda void set_ref(Space* ref = nullptr);
+	RHO__cuda Domain* domain();
+	RHO__cuda const Domain* domain() const;
+
+	RHO__cuda const Space* root() const override;
+
+	RHO__cuda void set_ref(Space* ref);
 	RHO__cuda void set_domain(Domain* domain);
-
-	RHO__cuda Space* root() const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -36,7 +39,7 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda bool Refresh() const override;
+	RHO__cuda const Domain* Refresh() const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -62,9 +65,12 @@ public:
 
 private:
 	Space* ref_;
-	Domain* domain_;
+
+	Domain* domain_raw_;
+	mutable const Domain* domain_;
 
 	mutable Space* eff_;
+	mutable const Space* root_;
 
 	mutable Mat eff_todm_;
 	mutable Mat ref_todm_;

@@ -3,7 +3,7 @@
 
 namespace rho {
 
-dim_t Domain::dim_r() const { return this->root()->dim_r(); }
+dim_t Domain::root_dim() const { return this->root()->root_dim(); }
 
 #///////////////////////////////////////////////////////////////////////////////
 

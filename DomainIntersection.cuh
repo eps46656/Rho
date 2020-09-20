@@ -18,7 +18,7 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda bool Refresh() const override;
+	RHO__cuda const Domain* Refresh() const override;
 
 	RHO__cuda bool Contain(const Num* root_point) const override;
 

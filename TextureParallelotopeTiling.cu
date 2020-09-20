@@ -9,8 +9,7 @@ namespace rho {
 size_t TextureParallelotopeTiling::dim() const { return this->dim_; }
 
 size_t TextureParallelotopeTiling::size(size_t index) const {
-	RHO__debug_if(this->dim_ <= index) RHO__throw__local("index error");
-
+	RHO__debug_if(this->dim_ <= index) { RHO__throw__local("index error"); }
 	return this->size_[index].first;
 }
 
@@ -54,7 +53,7 @@ TextureParallelotopeTiling::~TextureParallelotopeTiling() {}
 #////////////////////////////////////////////////
 
 bool TextureParallelotopeTiling::Refresh() const {
-	return this->ref_->RefreshSelf();
+	return this->ref_->Refresh();
 }
 
 #////////////////////////////////////////////////

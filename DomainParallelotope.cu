@@ -9,39 +9,42 @@ DomainParallelotope::DomainParallelotope(Space* ref): DomainSole(ref) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainParallelotope::Refresh() const {
-	if (!this->ref()->RefreshSelf()) { return false; }
+const Domain* DomainParallelotope::Refresh() const {
+	if (!this->ref_) { return nullptr; }
+
+	this->ref_->Refresh();
 
 	ContainFlag flag(0);
 	ContainFlag flag_end(1);
-	flag_end <<= this->dim();
+	flag_end <<= this->ref_->dim();
 
 	this->tod_matrix_.Resize(flag_end);
 
+	Mat temp;
+
 	for (; flag != flag_end; ++flag) {
-		const Num* a_i(this->ref()->root_axis());
-		Num* m_i(this->tod_matrix_[flag]);
+		const Num* a_i(this->ref_->root_axis());
+		Num* m_i(temp);
 
 		for (ContainFlag reader(1); reader != flag_end;
 			 reader <<= 1, a_i += RHO__max_dim) {
 			if (!(flag & reader)) {
-				Copy(this->dim_r(), m_i, a_i);
+				Vector::Copy(m_i, a_i);
 				m_i += RHO__max_dim;
 			}
 		}
 
-		this->tod_matrix_[flag].set_dim(
-			(m_i - this->tod_matrix_[flag]) / RHO__max_dim, this->dim_r());
-		Tod::TanMatrix(this->tod_matrix_[flag]);
+		Tod::TanMatrix((m_i - temp) / RHO__max_dim, this->ref_->root_dim(),
+					   this->tod_matrix_[flag], temp);
 	}
 
-	return true;
+	return this;
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
 bool DomainParallelotope::Contain_s(const Num* point) const {
-	for (size_t i(0); i != this->dim(); ++i) {
+	for (dim_t i(0); i != this->ref_->dim(); ++i) {
 		if (point[i].lt<-1>() || point[i].gt<1>()) { return false; }
 	}
 
@@ -51,7 +54,7 @@ bool DomainParallelotope::Contain_s(const Num* point) const {
 #///////////////////////////////////////////////////////////////////////////////
 
 size_t DomainParallelotope::RayCastComplexity() const {
-	return 10 * this->dim() + 5 * this->dim_cr();
+	return 10 * this->ref_->dim() + 5 * this->ref_->root_codim();
 }
 
 RayCastData DomainParallelotope::RayCast(const Ray& ray) const {
@@ -168,12 +171,12 @@ bool DomainParallelotope::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 	Vec origin;
 	Vec direct;
 
-	this->ref()->MapPointFromRoot_rr(origin, ray.origin);
-	this->ref()->MapVectorFromRoot_rr(direct, ray.direct);
+	this->ref_->MapPointFromRoot_rr(origin, ray.origin);
+	this->ref_->MapVectorFromRoot_rr(direct, ray.direct);
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (dim_t i(this->dim()); i != this->dim_r(); ++i) {
+	for (dim_t i(this->ref_->dim()); i != this->root_dim(); ++i) {
 		if (direct[i].eq<0>()) {
 			if (origin[i].eq<0>()) { continue; }
 			return false;
@@ -186,7 +189,7 @@ bool DomainParallelotope::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (dim_t i(0); i != this->dim(); ++i) {
+	for (dim_t i(0); i != this->ref_->dim(); ++i) {
 		if (direct[i].eq<0>()) {
 			if (origin[i].lt<-1>() || origin[i].gt<1>()) { return false; }
 			continue;
@@ -219,7 +222,7 @@ bool DomainParallelotope::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 
 void DomainParallelotope::GetTodTan(Num* dst, const RayCastData& rcd,
 									const Num* root_direct) const {
-	dot(this->dim_r(), this->dim_r(), dst, root_direct,
+	dot(this->root_dim(), this->root_dim(), dst, root_direct,
 		this->tod_matrix_[rcd.Get<RayCastDataCore_*>()->contain_flag]);
 }
 

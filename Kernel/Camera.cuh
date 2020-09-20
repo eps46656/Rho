@@ -2,7 +2,6 @@
 #define RHO__define_guard__Kernel__Camera_cuh
 
 #include "init.cuh"
-#include "Manager.cuh"
 #include "ComponentCollider.cuh"
 #include "Ray.cuh"
 
@@ -13,9 +12,11 @@ namespace rho {
 
 class Camera {
 public:
-	friend class Manager;
-
 	static constexpr size_t thread_num = 1920 * 1080;
+
+	using Collider = ComponentCollider;
+	using Light = ComponentLight;
+	using Material = Collider::Material;
 
 	struct RenderData {
 		mutable size_t index;
@@ -36,10 +37,12 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda Space* root() const;
-	RHO__cuda Space* ref() const;
+	RHO__cuda Space* ref();
+	RHO__cuda const Space* ref() const;
 
-	RHO__cuda size_t dim_r() const;
+	RHO__cuda const Space* root() const;
+
+	RHO__cuda dim_t root_dim() const;
 
 	RHO__cuda size_t image_height() const;
 	RHO__cuda size_t image_width() const;
@@ -53,14 +56,13 @@ public:
 	RHO__cuda size_t render_data_size() const;
 	RHO__cuda RenderData* render_data() const;
 
-	RHO__cuda ComponentCollider::Material& void_cmpt_collider_material();
-	RHO__cuda const ComponentCollider::Material&
-	void_cmpt_collider_material() const;
+	RHO__cuda Collider::Material& void_material();
+	RHO__cuda const Collider::Material& void_material() const;
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda void AddCmptCollider(ComponentCollider* cmpt_collider);
-	RHO__cuda void AddCmptLight(ComponentLight* cmpt_light);
+	RHO__cuda void AddCollider(const Collider* collider);
+	RHO__cuda void AddLight(const Light* light);
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -89,15 +91,18 @@ private:
 	mutable size_t render_data_size_;
 	mutable RenderData* render_data_;
 
-	mutable cntr::Vector<ComponentCollider*> cmpt_collider__ray_cast_order_;
-	mutable cntr::Vector<ComponentCollider*> cmpt_collider__detect_order_;
-	mutable cntr::Vector<ComponentLight*> cmpt_light_;
+	mutable RBT<const Collider*> collider_;
+
+	mutable cntr::Vector<const Collider*> collider__ray_cast_order_;
+	mutable cntr::Vector<const Collider*> collider__detect_order_;
+
+	mutable cntr::Vector<const Light*> light_;
 
 	mutable Vec direct_f_;
 	mutable Vec direct_h_;
 	mutable Vec direct_w_;
 
-	ComponentCollider::Material void_cmpt_collider_material_;
+	Material void_material_;
 
 	// mutable pair<cntr::BidirectionalNode*> task_stack_[thread_num];
 	// thread_stack_[thread_num].first  point to all allocated task
@@ -118,6 +123,7 @@ private:
 										   const size_t block_size_h,
 										   const size_t block_size_w);
 };
+
 }
 
 #endif

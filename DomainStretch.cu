@@ -10,32 +10,34 @@
 
 namespace rho {
 
-Space* DomainStretch::ref() const { return this->ref_; }
-Domain* DomainStretch::domain() const { return this->domain_; }
+Space* DomainStretch::ref() { return this->ref_; }
+const Space* DomainStretch::ref() const { return this->ref_; }
+
+Domain* DomainStretch::domain() { return this->domain_raw_; }
+const Domain* DomainStretch::domain() const { return this->domain_raw_; }
+
+const Space* DomainStretch::root() const { return this->root_; }
 
 void DomainStretch::set_ref(Space* ref) { this->ref_ = ref; }
-void DomainStretch::set_domain(Domain* domain) { this->domain_ = domain; }
-
-Space* DomainStretch::root() const {
-	return this->ref_ && (this->ref_->root() == this->domain_->root())
-			   ? this->ref_->root()
-			   : nullptr;
-}
+void DomainStretch::set_domain(Domain* domain) { this->domain_raw_ = domain; }
 
 #///////////////////////////////////////////////////////////////////////////////
 
 DomainStretch::DomainStretch(Space* ref, Domain* domain):
-	ref_(ref), domain_(domain), eff_(nullptr) {}
+	ref_(ref), domain_raw_(domain), domain_(nullptr), eff_(nullptr) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainStretch::Refresh() const {
-	if (!this->ref_) { return false; }
+const Domain* DomainStretch::Refresh() const {
+	if (!this->ref_ || !this->domain_raw_ ||
+		!(this->domain_ = this->domain_raw_->Refresh())) {
+		return nullptr;
+	}
 
-	if (this->root() != this->domain_->root() ||
-		this->root() != this->ref_->root() || !this->domain_->Refresh() ||
-		!this->ref_->RefreshSelf()) {
-		return false;
+	this->ref_->Refresh();
+
+	RHO__debug_if((this->root_ = this->ref_->root()) != this->domain_->root()) {
+		RHO__throw__local("root error");
 	}
 
 	if (!this->eff_) {
@@ -44,24 +46,20 @@ bool DomainStretch::Refresh() const {
 
 	this->eff_->SetOrigin(this->ref_->root_origin());
 	this->eff_->SetAxis(this->ref_->root_axis());
-	this->eff_->RefreshSelf();
+	this->eff_->Refresh();
 
-#///////////////////////////////////////////////////////////////////////////////
-
-	Tod::TanMatrix(this->ref_->dim(), this->ref_->dim_r(), this->ref_todm_,
+	Tod::TanMatrix(this->ref_->dim(), this->ref_->root_dim(), this->ref_todm_,
 				   this->ref_->root_axis());
 
-	Tod::TanMatrix(this->eff_->dim(), this->eff_->dim_r(), this->eff_todm_,
+	Tod::TanMatrix(this->eff_->dim(), this->eff_->root_dim(), this->eff_todm_,
 				   this->eff_->root_axis());
 
-	return true;
+	return this;
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
 bool DomainStretch::Contain(const Num* root_point) const {
-	if (!this->domain_) { return false; }
-
 	Vec temp;
 	this->ref_->MapPointFromRoot_rr(temp, root_point);
 
@@ -69,7 +67,7 @@ bool DomainStretch::Contain(const Num* root_point) const {
 		return false;
 	}
 
-	for (dim_t i(this->ref_->dim()); i != this->dim_r(); ++i) {
+	for (dim_t i(this->ref_->dim()); i != this->ref_->root_dim(); ++i) {
 		if (temp[i].ne<0>()) { return false; }
 	}
 
@@ -104,12 +102,10 @@ bool DomainStretch::Contain(const Num* root_point) const {
 	}
 
 size_t DomainStretch::RayCastComplexity() const {
-	return this->domain_ ? this->domain_->RayCastComplexity() + 100 : 0;
+	return this->domain_->RayCastComplexity() + 100;
 }
 
 size_t DomainStretch::RayCastFull(RayCastData* dst, const Ray& ray) const {
-	if (!this->domain_) { return 0; }
-
 	RayCastTemp rct;
 	switch (this->RayCast_(ray, rct)) {
 		case RHO__fail: return 0;
@@ -238,7 +234,7 @@ int DomainStretch::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (dim_t i(ref_dim); i != this->dim_r(); ++i) {
+	for (dim_t i(ref_dim); i != this->ref_->root_dim(); ++i) {
 		if (rct.ref_direct[i].eq<0>()) {
 			if (rct.ref_origin[i].eq<0>()) { continue; }
 			return false;
@@ -288,10 +284,10 @@ void DomainStretch::GetTodTan(Num* dst, const RayCastData& rcd,
 	if (a) {
 		Vec temp;
 		a->domain->GetTodTan(temp, a, root_direct);
-		dot(this->ref_->dim_r(), this->ref_->dim_r(), dst, temp,
+		dot(this->ref_->root_dim(), this->ref_->root_dim(), dst, temp,
 			this->ref_todm_);
 	} else {
-		dot(this->ref_->dim_r(), this->ref_->dim_r(), dst, root_direct,
+		dot(this->ref_->root_dim(), this->ref_->root_dim(), dst, root_direct,
 			this->eff_todm_);
 	}
 }

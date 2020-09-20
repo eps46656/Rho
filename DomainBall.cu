@@ -5,11 +5,15 @@
 
 namespace rho {
 
-DomainBall::DomainBall(Space* parent): DomainSole(parent) {}
+DomainBall::DomainBall(Space* ref): DomainSole(ref) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainBall::Refresh() const { return this->ref()->RefreshSelf(); }
+const Domain* DomainBall::Refresh() const {
+	if (!this->ref_) { return nullptr; }
+	this->ref_->Refresh();
+	return this;
+}
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -20,7 +24,7 @@ bool DomainBall::Contain_s(const Num* point) const {
 #///////////////////////////////////////////////////////////////////////////////
 
 size_t DomainBall::RayCastComplexity() const {
-	return 15 * this->dim() + 5 * this->dim_cr();
+	return 15 * this->dim() + 5 * this->root_codim();
 }
 
 RayCastData DomainBall::RayCast(const Ray& ray) const {
@@ -129,39 +133,37 @@ size_t DomainBall::RayCastFull(RayCastData* dst, const Ray& ray) const {
 }
 
 bool DomainBall::RayCast_(const Ray& ray, RayCastTemp& rct) const {
-	this->ref()->MapPointFromRoot_rr(rct.origin, ray.origin);
-	this->ref()->MapVectorFromRoot_rr(rct.direct, ray.direct);
+	this->ref_->MapPointFromRoot_rr(rct.origin, ray.origin);
+	this->ref_->MapVectorFromRoot_rr(rct.direct, ray.direct);
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	{
-		Num a(0);
-		Num b(0);
-		Num c(-1);
+	Num a(0);
+	Num b(0);
+	Num c(-1);
 
-		for (size_t i(0); i != this->dim(); ++i) {
-			a += sq(rct.direct[i]);
-			b -= rct.origin[i] * rct.direct[i];
-			c += sq(rct.origin[i]);
-		}
+	for (dim_t i(0); i != this->dim(); ++i) {
+		a += sq(rct.direct[i]);
+		b -= rct.origin[i] * rct.direct[i];
+		c += sq(rct.origin[i]);
+	}
 
-		if (a.eq<0>()) {
-			if (c.gt<0>()) { return false; }
-		} else {
-			if ((c = sq(b) - a * c).lt<0>()) { return false; }
-			c = sqrt(c);
+	if (a.eq<0>()) {
+		if (c.gt<0>()) { return false; }
+	} else {
+		if ((c = sq(b) - a * c).lt<0>()) { return false; }
+		c = sqrt(c);
 
-			rct.t[1] = (b + c) / a;
-			if (rct.t[1].lt<0>()) { return false; }
+		rct.t[1] = (b + c) / a;
+		if (rct.t[1].lt<0>()) { return false; }
 
-			rct.t[0] = (b - c) / a;
-			if (rct.t[0].lt<0>()) { rct.t[0] = 0; }
-		}
+		rct.t[0] = (b - c) / a;
+		if (rct.t[0].lt<0>()) { rct.t[0] = 0; }
 	}
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (size_t i(this->dim()); i != this->dim_r(); ++i) {
+	for (dim_t i(this->dim()); i != this->root_dim(); ++i) {
 		if (rct.direct[i].eq<0>()) {
 			if (rct.origin[i].eq<0>()) { continue; }
 			return false;
@@ -178,15 +180,16 @@ bool DomainBall::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 #///////////////////////////////////////////////////////////////////////////////
 
 Matrix DomainBall::GetParallelVector_s(const Vector& point) const {
-	RHO__debug_if(this->dim_r() != point.dim() && this->dim() != point.dim()) {
+	RHO__debug_if(this->root_dim() != point.dim() &&
+				  this->dim() != point.dim()) {
 		RHO__throw__local("dim error");
 	}
 
 	Num a(sq(this->dim(), point));
 
 	if (a.ne<1>()) {
-		Matrix r(this->dim(), this->dim_r());
-		Matrix::identity(r, this->dim_r());
+		Matrix r(this->dim(), this->root_dim());
+		Matrix::identity(r, this->root_dim());
 
 		return r;
 	}
@@ -196,9 +199,9 @@ Matrix DomainBall::GetParallelVector_s(const Vector& point) const {
 
 	Complement(orth);
 
-	Matrix tan(this->dim() - 1, this->dim_r());
-	dot(this->dim() - 1, this->dim(), this->dim_r(), tan, orth + this->dim(),
-		this->ref()->root_axis());
+	Matrix tan(this->dim() - 1, this->root_dim());
+	dot(this->dim() - 1, this->dim(), this->root_dim(), tan, orth + this->dim(),
+		this->ref_->root_axis());
 
 	return tan;
 }
@@ -207,7 +210,9 @@ Matrix DomainBall::GetParallelVector_s(const Vector& point) const {
 
 void DomainBall::GetTodTan(Num* dst, const RayCastData& rcd,
 						   const Num* root_direct) const {
-	RHO__debug_if(this != rcd->domain) RHO__throw__local("domain sole error");
+	RHO__debug_if(this != rcd->domain) {
+		RHO__throw__local("domain sole error");
+	}
 
 	Num* point(rcd.Get<RayCastDataCore_*>()->point);
 
@@ -215,19 +220,19 @@ void DomainBall::GetTodTan(Num* dst, const RayCastData& rcd,
 	Mat temp;
 
 	if (sq(this->dim(), point).ne<1>()) {
-		Matrix::identity(temp, this->dim_r());
-		Tod::TanMatrix(this->dim(), this->dim_r(), m, temp);
+		Matrix::identity(temp, this->root_dim());
+		Tod::TanMatrix(this->dim(), this->root_dim(), m, temp);
 	} else {
 		Copy<RHO__max_dim>(m, point);
 		Complement(1, this->dim(), m);
 
-		dot(this->dim() - 1, this->dim(), this->dim_r(), temp, m + RHO__max_dim,
-			this->ref()->root_axis());
+		dot(this->dim() - 1, this->dim(), this->root_dim(), temp,
+			m + RHO__max_dim, this->ref_->root_axis());
 
-		Tod::TanMatrix(this->dim() - 1, this->dim_r(), m, temp);
+		Tod::TanMatrix(this->dim() - 1, this->root_dim(), m, temp);
 	}
 
-	dot(this->dim_r(), this->dim_r(), dst, root_direct, m);
+	dot(this->root_dim(), this->root_dim(), dst, root_direct, m);
 }
 
 }

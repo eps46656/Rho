@@ -49,8 +49,15 @@ ComponentCollider::Material* ComponentCollider::Material::set_transmittance(
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 
-const Domain* ComponentCollider::domain() const { return this->domain_; }
-const Texture* ComponentCollider::texture() const { return this->texture_; }
+const Space* ComponentCollider::root() const {
+	return this->domain_ ? this->domain_->root() : nullptr;
+}
+
+#///////////////////////////////////////////////////////////////////////////////
+
+Domain* ComponentCollider::domain() { return this->domain_raw_; }
+const Domain* ComponentCollider::domain() const { return this->domain_raw_; }
+Texture* ComponentCollider::texture() const { return this->texture_; }
 
 ComponentCollider::Material& ComponentCollider::material() {
 	return this->material_;
@@ -59,34 +66,38 @@ const ComponentCollider::Material& ComponentCollider::material() const {
 	return this->material_;
 }
 
-ComponentCollider* ComponentCollider::set_domain(const Domain* domain) {
-	this->domain_ = domain;
+ComponentCollider* ComponentCollider::set_domain(Domain* domain) {
+	this->domain_raw_ = domain;
 	return this;
 }
 
-ComponentCollider* ComponentCollider::set_texture(const Texture* texture) {
+ComponentCollider* ComponentCollider::set_texture(Texture* texture) {
 	this->texture_ = texture;
 	return this;
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-ComponentCollider::ComponentCollider(Object* object, const Domain* domain,
-									 Texture* texture):
-	Component(Type::collider, object),
-	domain_(domain), texture_(texture) {}
+ComponentCollider::ComponentCollider(Domain* domain, Texture* texture):
+	Component(Type::collider), domain_raw_(domain), domain_(nullptr),
+	texture_(texture) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
 bool ComponentCollider::Refresh() const {
-	return this->domain_->root() && this->domain_->Refresh() &&
-		   this->texture_->Refresh();
+	if (!this->domain_raw_ || !(this->domain_ = this->domain_raw_->Refresh())) {
+		return false;
+	}
+
+	this->texture_->Refresh();
+
+	return true;
 }
 
 #///////////////////////////////////////////////////////////////////////////////
 
 bool ComponentCollider::Contain(const Num* point) const {
-	return this->domain_->Contain(point);
+	return this->domain_ && this->domain_->Contain(point);
 }
 
 }

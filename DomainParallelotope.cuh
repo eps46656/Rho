@@ -24,7 +24,7 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda bool Refresh() const override;
+	RHO__cuda const Domain* Refresh() const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -46,7 +46,7 @@ public:
 							 const Num* root_direct) const override;
 
 private:
-	mutable cntr::Vector<Matrix> tod_matrix_;
+	mutable cntr::Vector<Mat> tod_matrix_;
 
 	RHO__cuda bool RayCast_(const Ray& ray, RayCastTemp& rct) const;
 };

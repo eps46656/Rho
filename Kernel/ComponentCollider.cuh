@@ -25,18 +25,21 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
+	RHO__cuda const Space* root() const override;
+
+	RHO__cuda Domain* domain();
 	RHO__cuda const Domain* domain() const;
+
 	RHO__cuda Material& material();
 	RHO__cuda const Material& material() const;
-	RHO__cuda const Texture* texture() const;
+	RHO__cuda Texture* texture() const;
 
-	RHO__cuda ComponentCollider* set_object(Object* object);
-	RHO__cuda ComponentCollider* set_domain(const Domain* domain);
-	RHO__cuda ComponentCollider* set_texture(const Texture* texture);
+	RHO__cuda ComponentCollider* set_domain(Domain* domain);
+	RHO__cuda ComponentCollider* set_texture(Texture* texture);
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda ComponentCollider(Object* object, const Domain* domain = nullptr,
+	RHO__cuda ComponentCollider(Domain* domain = nullptr,
 								Texture* texture = nullptr);
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -48,9 +51,10 @@ public:
 	RHO__cuda virtual bool Contain(const Num* point) const;
 
 private:
-	const Domain* domain_;
+	Domain* domain_raw_;
+	mutable const Domain* domain_;
 	Material material_;
-	const Texture* texture_;
+	Texture* texture_;
 };
 
 }

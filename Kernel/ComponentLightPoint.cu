@@ -1,26 +1,34 @@
 #include "define.cuh"
-#include "ComponentLightPoint.cuh"
+#include "Kernel.cuh"
 
 #define B 0.1
 
 namespace rho {
 
-Space* ComponentLightPoint::ref() const { return this->ref_; }
+const Space* ComponentLightPoint::ref() const { return this->ref_; }
+const Space* ComponentLightPoint::root() const { return this->ref_->root(); }
+
+dim_t ComponentLightPoint::root_dim() const { return this->ref_->root_dim(); }
 
 Num3& ComponentLightPoint::intensity() { return this->intensity_; }
 const Num3& ComponentLightPoint::intensity() const { return this->intensity_; }
 
+ComponentLightPoint* ComponentLightPoint::set_ref(const Space* ref) {
+	this->ref_ = ref;
+	return this;
+}
+
 #///////////////////////////////////////////////////////////////////////////////
 
-ComponentLightPoint::ComponentLightPoint(Object* object, Space* ref,
+ComponentLightPoint::ComponentLightPoint(const Space* ref,
 										 const Num3& intensity):
-	ComponentLight(object),
-	ref_(ref), intensity_(intensity) {}
+	ref_(ref),
+	intensity_(intensity) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
 bool ComponentLightPoint::Refresh() const {
-	return this->ref_->RefreshSelf() && this->intensity_[0].ge<0>() &&
+	return this->ref_->Refresh() && this->intensity_[0].ge<0>() &&
 		   this->intensity_[1].ge<0>() && this->intensity_[2].ge<0>();
 }
 
@@ -28,7 +36,7 @@ bool ComponentLightPoint::Refresh() const {
 
 Num3 ComponentLightPoint::intensity(
 	const Num* root_point, const Tod& tod,
-	const cntr::Vector<ComponentCollider*>& cmpt_collider,
+	const cntr::Vector<const ComponentCollider*>& cmpt_collider,
 	const Num* reflection_vector, const Texture::Data& texture_data, Ray& ray,
 	Num pre_dist) const {
 	// from light point to hit point
@@ -36,7 +44,7 @@ Num3 ComponentLightPoint::intensity(
 	Vec direct;
 	Vector::sub(direct, root_point, this->ref_->root_origin());
 
-	Num face_angle_cos(angle_cos(this->dim_r(), direct, tod.orth));
+	Num face_angle_cos(angle_cos(this->root_dim(), direct, tod.orth));
 	bool indirect(face_angle_cos.lt<0>());
 
 	// check if light is blocked by other colliders
@@ -56,9 +64,9 @@ Num3 ComponentLightPoint::intensity(
 	}
 
 	Num3 r;
-	Num length_sq(sq(pre_dist + abs(this->dim_r(), direct)));
+	Num length_sq(sq(pre_dist + abs(this->root_dim(), direct)));
 	Num half_cos_sq(
-		(Num(1) + angle_cos(this->dim_r(), direct, reflection_vector)) / 2);
+		(Num(1) + angle_cos(this->root_dim(), direct, reflection_vector)) / 2);
 
 	r[0] = (this->intensity_[0] / length_sq) *
 		   pow(half_cos_sq, texture_data.shininess[0] / 2);

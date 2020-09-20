@@ -11,10 +11,10 @@ struct Tod {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda static void TanMatrix(dim_t dim_s, dim_t dim_r, Num* dst,
+	RHO__cuda static void TanMatrix(dim_t dim, dim_t root_dim, Num* dst,
 									const Num* src);
 
-	RHO__cuda static void OrthMatrix(dim_t dim_s, dim_t dim_r, Num* dst,
+	RHO__cuda static void OrthMatrix(dim_t dim, dim_t root_dim, Num* dst,
 									 const Num* src);
 
 	RHO__cuda static void TanMatrix(Matrix& matrix);
