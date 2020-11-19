@@ -33,22 +33,29 @@ struct Double {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	template<int x> RHO__cuda bool lt() const {
+	template<long long int x> RHO__cuda bool lt() const {
 		return this->value < (x - RHO__eps);
 	}
 
-	template<int x> RHO__cuda bool gt() const {
+	template<long long int x> RHO__cuda bool gt() const {
 		return (x + RHO__eps) < this->value;
 	}
 
-	template<int x> RHO__cuda bool eq() const {
+	template<long long int x> RHO__cuda bool eq() const {
 		return !this->lt<x>() && !this->gt<x>();
 	}
 
-	template<int x> RHO__cuda bool ne() const { return !this->eq<x>(); }
+	template<long long int x> RHO__cuda bool ne() const {
+		return !this->eq<x>();
+	}
 
-	template<int x> RHO__cuda bool le() const { return !this->gt<x>(); }
-	template<int x> RHO__cuda bool ge() const { return !this->lt<x>(); }
+	template<long long int x> RHO__cuda bool le() const {
+		return !this->gt<x>();
+	}
+
+	template<long long int x> RHO__cuda bool ge() const {
+		return !this->lt<x>();
+	}
 
 #///////////////////////////////////////////////////////////////////////////////
 

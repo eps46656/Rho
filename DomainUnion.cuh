@@ -15,10 +15,10 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda Space* root() const;
+	RHO__cuda const Space* root() const;
 
-	RHO__cuda RBT<Domain*>& domain();
-	RHO__cuda const RBT<Domain*>& domain() const;
+	RHO__cuda DomainUnion& add_domain();
+	RHO__cuda DomainUnion& sub_domain() const;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -26,7 +26,7 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda bool Refresh() const override;
+	RHO__cuda const Domain* Refresh() const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -39,7 +39,10 @@ public:
 							   const Ray& ray) const override;
 
 private:
-	RBT<Domain*> domain_;
+	RBT<Domain*> domain_raw_;
+	mutable cntr::Vector<Domain*> domain_;
+
+	mutable const Space* root_;
 
 	RHO__cuda static void RayCast_(RayCastDataVector& dst, RayCastDataVector& a,
 								   RayCastDataVector& b);

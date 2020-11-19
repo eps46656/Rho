@@ -81,21 +81,18 @@ bool DomainStretch::Contain(const Num* root_point) const {
 
 #define RHO__F                                                                 \
 	{                                                                          \
+		dst[size].domain = this;                                               \
+                                                                               \
 		if (rct.t[0].ne<0>()) {                                                \
-			auto rcd(New<RayCastDataCore_>());                                 \
-			rcd->domain = this;                                                \
-			rcd->t = rct.t[0];                                                 \
-			rcd->phase.set(false, true);                                       \
-			dst[size] = rcd;                                                   \
-			if (++size == RHO__Domain__RayCastFull_max_rcd) {                  \
-				return RHO__Domain__RayCastFull_max_rcd;                       \
-			}                                                                  \
+			dst[size].t = rct.t[0];                                            \
+			dst[size].phase.set(false, true);                                  \
+		} else {                                                               \
+			dst[size].t = rct.t[1];                                            \
+			dst[size].phase.set(true, false);                                  \
 		}                                                                      \
-		auto rcd(New<RayCastDataCore_>());                                     \
-		rcd->domain = this;                                                    \
-		rcd->t = rct.t[1];                                                     \
-		rcd->phase.set(true, false);                                           \
-		dst[size] = rcd;                                                       \
+                                                                               \
+		dst[size].spare[0] = reinterpret_cast<size_t>(nullptr);                \
+                                                                               \
 		if (++size == RHO__Domain__RayCastFull_max_rcd) {                      \
 			return RHO__Domain__RayCastFull_max_rcd;                           \
 		}                                                                      \
@@ -116,11 +113,10 @@ size_t DomainStretch::RayCastFull(RayCastData* dst, const Ray& ray) const {
 
 			if (!this->domain_->Contain(point)) { return 0; }
 
-			auto rcd(New<RayCastDataCore_>());
-			rcd->domain = this;
-			rcd->t = rct.t[0];
-			rcd->phase.set(false, false);
-			dst[0] = rcd;
+			dst[0].domain = this;
+			dst[0].t = rct.t[0];
+			dst[0].phase.set(false, false);
+			dst[0].spare[0] = reinterpret_cast<size_t>(nullptr);
 
 			return 1;
 		}
@@ -137,47 +133,45 @@ size_t DomainStretch::RayCastFull(RayCastData* dst, const Ray& ray) const {
 			return RHO__Domain__RayCastFull_in_phase;
 	}
 
-	bool rcdv_fr(rcdv[0]->phase.fr());
+	bool rcdv_fr(rcdv[0].phase.fr());
 	size_t size(0);
 
-	while (rct.t[1] < rcdv[--rcdv_size]->t) {
+	while (rct.t[1] < rcdv[--rcdv_size].t) {
 		if (rcdv_size == 0) {
 			if (rcdv_fr) { RHO__F; }
 			return size;
 		}
 	}
 
-	bool rcdv_to(rcdv[rcdv_size]->phase.to());
+	bool rcdv_to(rcdv[rcdv_size].phase.to());
 	++rcdv_size;
 
 	size_t i(0);
 
-	while (rcdv[i]->t < rct.t[0]) {
+	while (rcdv[i].t < rct.t[0]) {
 		if (++i == rcdv_size) {
 			if (rcdv_to) { RHO__F; }
 			return size;
 		}
 	}
 
-	if (rct.t[0] == rcdv[i]->t) {
-		auto rcd(New<RayCastDataCore_>());
-		rcd->domain = this;
-		rcd->t = rct.t[0];
-		rcd->phase = rcdv[i]->phase;
-		rcd->rcd = Move(rcdv[i]);
-		dst[size] = rcd;
+	if (rct.t[0] == rcdv[i].t) {
+		dst[size].domain = this;
+		dst[size].t = rct.t[0];
+		dst[size].phase = rcdv[i].phase;
+		dst[size].spare[0] =
+			reinterpret_cast<size_t>(New<RayCastData>(rcdv[i]));
 
 		if (++size == RHO__Domain__RayCastFull_max_rcd) {
 			return RHO__Domain__RayCastFull_max_rcd;
 		}
 
 		if (++i == rcdv_size) { return size; }
-	} else if (rcdv[i]->phase.fr()) {
-		auto rcd(New<RayCastDataCore_>());
-		rcd->domain = this;
-		rcd->t = rct.t[0];
-		rcd->phase.set(false, true);
-		dst[size] = rcd;
+	} else if (rcdv[i].phase.fr()) {
+		dst[size].domain = this;
+		dst[size].t = rct.t[0];
+		dst[size].phase.set(false, true);
+		dst[size].spare[0] = reinterpret_cast<size_t>(nullptr);
 
 		if (++size == RHO__Domain__RayCastFull_max_rcd) {
 			return RHO__Domain__RayCastFull_max_rcd;
@@ -185,11 +179,11 @@ size_t DomainStretch::RayCastFull(RayCastData* dst, const Ray& ray) const {
 	}
 
 	while (rcdv[i] < rct.t[1]) {
-		auto rcd(New<RayCastDataCore_>());
-		rcd->domain = this;
-		rcd->t = rcdv[i]->t;
-		rcd->rcd = Move(rcdv[i]);
-		dst[size] = rcd;
+		dst[size].domain = this;
+		dst[size].t = rcdv[i].t;
+		dst[size].phase = rcdv[i].phase;
+		dst[size].spare[0] =
+			reinterpret_cast<size_t>(New<RayCastData>(rcdv[i]));
 
 		if (++size == RHO__Domain__RayCastFull_max_rcd) {
 			return RHO__Domain__RayCastFull_max_rcd;
@@ -197,10 +191,11 @@ size_t DomainStretch::RayCastFull(RayCastData* dst, const Ray& ray) const {
 
 		if (++i == rcdv_size) {
 			if (rcdv_to) {
-				auto rcd(New<RayCastDataCore_>());
-				rcd->domain = this;
-				rcd->t = rct.t[1];
-				dst[size] = rcd;
+				dst[size].domain = this;
+				dst[size].t = rct.t[1];
+				dst[size].phase.set(true, false);
+				dst[size].spare[0] = reinterpret_cast<size_t>(nullptr);
+
 				++size;
 			}
 
@@ -213,11 +208,10 @@ size_t DomainStretch::RayCastFull(RayCastData* dst, const Ray& ray) const {
 	// and also rcdv[i]-t < rct.t[1] above
 	// => rcdv[i]->t == rct.t[1]
 
-	auto rcd(New<RayCastDataCore_>());
-	rcd->domain = this;
-	rcd->t = rct.t[1];
-	rcd->rcd = Move(rcdv[i]);
-	dst[size] = rcd;
+	dst[size].domain = this;
+	dst[size].t = rct.t[1];
+	dst[size].phase.set(true, false);
+	dst[size].spare[0] = reinterpret_cast<size_t>(New<RayCastData>(rcdv[i]));
 
 	return size + 1;
 }
@@ -234,19 +228,23 @@ int DomainStretch::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (dim_t i(ref_dim); i != this->ref_->root_dim(); ++i) {
-		if (rct.ref_direct[i].eq<0>()) {
-			if (rct.ref_origin[i].eq<0>()) { continue; }
-			return false;
-		}
+	if (this->ref_->root_codim()) {
+		dim_t i(ref_dim);
 
-		Num t(-rct.ref_origin[i] / rct.ref_direct[i]);
-		if (t < rct.t[0] || rct.t[1] < t) { return RHO__fail; }
-		rct.t[0] = rct.t[1] = t;
+		do {
+			if (rct.ref_direct[i].eq<0>()) {
+				if (rct.ref_origin[i].eq<0>()) { continue; }
+				return false;
+			}
+
+			Num t(-rct.ref_origin[i] / rct.ref_direct[i]);
+			if (t < rct.t[0] || rct.t[1] < t) { return RHO__fail; }
+			rct.t[0] = rct.t[1] = t;
+		} while (++i != this->ref_->root_dim());
+
+		if (rct.t[0].eq<0>() && rct.t[1].eq<0>()) { return RHO__fail; }
+		if (rct.t[0] == rct.t[1]) { return RHO__co; }
 	}
-
-	if (rct.t[0].eq<0>() && rct.t[1].eq<0>()) { return RHO__fail; }
-	if (rct.t[0] == rct.t[1]) { return RHO__co; }
 
 	if (rct.ref_direct[eff_dim].eq<0>()) {
 		if (rct.ref_origin[eff_dim].lt<0>() ||
@@ -257,15 +255,13 @@ int DomainStretch::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 		return RHO__tan;
 	}
 
-	{
-		Num t[]{ -rct.ref_origin[eff_dim] / rct.ref_direct[eff_dim],
-				 (1 - rct.ref_origin[eff_dim]) / rct.ref_direct[eff_dim] };
+	Num t[]{ -rct.ref_origin[eff_dim] / rct.ref_direct[eff_dim],
+			 (1 - rct.ref_origin[eff_dim]) / rct.ref_direct[eff_dim] };
 
-		if (t[1] < t[0]) { Swap(t[0], t[1]); }
-		if (t[1] < rct.t[0] || rct.t[1] < t[0]) { return RHO__fail; }
-		if (rct.t[0] < t[0]) { rct.t[0] = t[0]; }
-		if (t[1] < rct.t[1]) { rct.t[1] = t[1]; }
-	}
+	if (t[1] < t[0]) { Swap(t[0], t[1]); }
+	if (t[1] < rct.t[0] || rct.t[1] < t[0]) { return RHO__fail; }
+	if (rct.t[0] < t[0]) { rct.t[0] = t[0]; }
+	if (t[1] < rct.t[1]) { rct.t[1] = t[1]; }
 
 	this->eff_->MapPointToRoot_sr(rct.proj_eff_ray.origin, rct.ref_origin);
 	this->eff_->MapVectorToRoot_sr(rct.proj_eff_ray.direct, rct.ref_direct);
@@ -273,17 +269,21 @@ int DomainStretch::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 	return RHO__nm;
 }
 
+void DomainStretch::RayCastDataDeleter(RayCastData& rcd) const {
+	Delete(reinterpret_cast<RayCastData*>(rcd.spare[0]));
+}
+
 #///////////////////////////////////////////////////////////////////////////////
 
 void DomainStretch::GetTodTan(Num* dst, const RayCastData& rcd,
 							  const Num* root_direct) const {
-	RHO__debug_if(this != rcd->domain) { RHO__throw__local("domain error"); }
+	RHO__debug_if(this != rcd.domain) { RHO__throw__local("domain error"); }
 
-	RayCastData& a(rcd.Get<RayCastDataCore_*>()->rcd);
+	RayCastData* a(reinterpret_cast<RayCastData*>(rcd.spare[0]));
 
 	if (a) {
 		Vec temp;
-		a->domain->GetTodTan(temp, a, root_direct);
+		a->domain->GetTodTan(temp, *a, root_direct);
 		dot(this->ref_->root_dim(), this->ref_->root_dim(), dst, temp,
 			this->ref_todm_);
 	} else {

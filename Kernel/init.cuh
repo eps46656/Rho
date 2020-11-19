@@ -17,6 +17,15 @@
 
 namespace rho {
 
+#define RHO__Domain__RayCastFull_max_rcd 8
+
+#if (RHO__Domain__RayCastFull_max_rcd < 8)
+	#error RHO__Domain__RayCastFull_max_rcd must bigger than 8
+#endif
+
+#define RHO__Domain__RayCastFull_in_phase                                      \
+	(RHO__Domain__RayCastFull_max_rcd + 100)
+
 using double_t = double;
 using code_t = unsigned int;
 using enum_t = unsigned int;
@@ -26,21 +35,14 @@ template<typename T, size_t N> using Array_t = cntr::Array<T, N>;
 
 using Num3 = cntr::Array<Num, 3>;
 
+using BNode = cntr::BidirectionalNode;
+
 template<typename T, typename Compare = op::lt<T>>
 using RBT = cntr::RedBlackTree<T, Compare>;
 
 template<typename Index, typename Value,
 		 typename Compare = cntr::MapCompare<Index, Value>>
 using Map_t = cntr::Map<Index, Value, Compare>;
-
-#define RHO__Domain__RayCastFull_max_rcd 8
-
-#if (RHO__Domain__RayCastFull_max_rcd < 8)
-	#error RHO__Domain__RayCastFull_max_rcd must bigger than 8
-#endif
-
-#define RHO__Domain__RayCastFull_in_phase                                      \
-	(RHO__Domain__RayCastFull_max_rcd + 100)
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -84,11 +86,9 @@ class Camera;
 
 struct Tod;
 
-struct RayCastDataCore;
-using RayCastData = ptr::Unique<RayCastDataCore>;
-using RayCastDataPair = cntr::Array<RayCastData, 2>;
-using RayCastDataVector =
-	cntr::Array<RayCastData, RHO__Domain__RayCastFull_max_rcd>;
+struct RayCastData;
+using RayCastDataVector = RayCastData[RHO__Domain__RayCastFull_max_rcd];
+using RayCastDataPair = RayCastData[2];
 
 struct RefractionData;
 

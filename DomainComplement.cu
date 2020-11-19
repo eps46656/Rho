@@ -5,19 +5,19 @@
 
 namespace rho {
 
-Domain* DomainComplement::domain() const { return this->domain_; }
+Domain* DomainComplement::domain() const { return this->domain_raw_; }
 
-void DomainComplement::domain(Domain* domain) { this->domain_ = domain; }
-
-#///////////////////////////////////////////////////////////////////////////////
-
-DomainComplement::DomainComplement(Domain* domain): domain_(domain) {}
+void DomainComplement::domain(Domain* domain) { this->domain_raw_ = domain; }
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainComplement::Refresh() const {
-	return this->domain_ && this->root() == this->domain_->root() &&
-		   this->domain_->Refresh();
+DomainComplement::DomainComplement(Domain* domain): domain_raw_(domain) {}
+
+#///////////////////////////////////////////////////////////////////////////////
+
+const Domain* DomainComplement::Refresh() const {
+	if (this->domain_ = this->domain_raw_->Refresh()) { return this; }
+	return nullptr;
 }
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -27,6 +27,10 @@ bool DomainComplement::Contain(const Num* root_point) const {
 }
 
 #///////////////////////////////////////////////////////////////////////////////
+
+size_t DomainComplement::RayCastComplexity() const {
+	return this->domain_->RayCastComplexity();
+}
 
 void DomainComplement::RayCastPair(RayCastDataPair& rcdp,
 								   const Ray& ray) const {
@@ -67,9 +71,5 @@ void DomainComplement::GetTodTan(Num* dst, const RayCastData& rcd,
 }
 
 #///////////////////////////////////////////////////////////////////////////////
-
-size_t DomainComplement::Complexity() const {
-	return this->domain_->Complexity();
-}
 
 }

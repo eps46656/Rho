@@ -7,15 +7,9 @@ namespace rho {
 
 class DomainParallelotope: public DomainSole {
 public:
-	using ContainFlag = size_t;
-
 	struct RayCastTemp {
 		Num t[2];
-		ContainFlag contain_flag[2];
-	};
-
-	struct RayCastDataCore_: public RayCastDataCore {
-		ContainFlag contain_flag;
+		size_t contain_flag[2];
 	};
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -33,9 +27,9 @@ public:
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda size_t RayCastComplexity() const override;
-	RHO__cuda RayCastData RayCast(const Ray& ray) const override;
+	RHO__cuda bool RayCast(RayCastData& dst, const Ray& ray) const override;
 	RHO__cuda bool RayCastB(const Ray& ray) const override;
-	RHO__cuda void RayCastPair(RayCastDataPair& rcdp,
+	RHO__cuda void RayCastPair(RayCastDataPair& dst,
 							   const Ray& ray) const override;
 	RHO__cuda size_t RayCastFull(RayCastData* dst,
 								 const Ray& ray) const override;

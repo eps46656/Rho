@@ -13,10 +13,6 @@ public:
 		Vec direct;
 	};
 
-	struct RayCastDataCore_: public RayCastDataCore {
-		Vec point;
-	};
-
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda DomainBall(Space* ref = nullptr);
@@ -31,10 +27,10 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda size_t RayCastComplexity() const;
-	RHO__cuda RayCastData RayCast(const Ray& ray) const override;
+	RHO__cuda size_t RayCastComplexity() const override;
+	RHO__cuda bool RayCast(RayCastData& dst, const Ray& ray) const override;
 	RHO__cuda bool RayCastB(const Ray& ray) const override;
-	RHO__cuda void RayCastPair(RayCastDataPair& rcdp,
+	RHO__cuda void RayCastPair(RayCastDataPair& dst,
 							   const Ray& ray) const override;
 	RHO__cuda size_t RayCastFull(RayCastData* dst,
 								 const Ray& ray) const override;

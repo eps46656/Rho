@@ -34,12 +34,14 @@ public:
 #///////////////////////////////////////////////////////////////////////////////
 
 	RHO__cuda virtual size_t RayCastComplexity() const = 0;
-	RHO__cuda virtual RayCastData RayCast(const Ray& ray) const;
+	RHO__cuda virtual bool RayCast(RayCastData& dst, const Ray& ray) const;
 	RHO__cuda virtual bool RayCastB(const Ray& ray) const;
-	RHO__cuda virtual void RayCastPair(RayCastDataPair& rcdp,
+	RHO__cuda virtual void RayCastPair(RayCastDataPair& dst,
 									   const Ray& ray) const;
 	RHO__cuda virtual size_t RayCastFull(RayCastData* dst,
 										 const Ray& ray) const = 0;
+
+	RHO__cuda virtual void RayCastDataDeleter(RayCastData& rcd) const;
 
 	/*
 

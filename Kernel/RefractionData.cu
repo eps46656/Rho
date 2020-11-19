@@ -14,8 +14,8 @@ RefractionData::RefractionData(const RayCastData& rcd, const Tod& tod,
 		return;
 	}
 
-	Num p_length_sq(sq(rcd->domain->root_dim(), tod.tan));
-	Num n_length_sq(sq(rcd->domain->root_dim(), tod.orth));
+	Num p_length_sq(sq(rcd.domain->root_dim(), tod.tan));
+	Num n_length_sq(sq(rcd.domain->root_dim(), tod.orth));
 
 #///////////////////////////////////////////////////////////////////////////////
 

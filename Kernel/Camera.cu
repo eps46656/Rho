@@ -7,6 +7,16 @@
 
 namespace rho {
 
+Camera::Task* Camera::Task::prev() const {
+	return static_cast<Task*>(cntr::BidirectionalNode::prev());
+}
+
+Camera::Task* Camera::Task::next() const {
+	return static_cast<Task*>(cntr::BidirectionalNode::next());
+}
+
+#///////////////////////////////////////////////////////////////////////////////
+
 void Camera::RenderData::Clear() const {
 	this->intensity[0] = this->intensity[1] = this->intensity[2] = this->dist =
 		0;
@@ -81,8 +91,8 @@ struct ColliderCompare {
 
 void Camera::Render(size_t block_pos_h, size_t block_pos_w, size_t block_size_h,
 					size_t block_size_w) const {
-	CameraRenderMain_<<<32, 1024>>>(this, block_pos_h, block_pos_w,
-									block_size_h, block_size_w);
+	CameraRenderMain_<<<1, 1024>>>(this, block_pos_h, block_pos_w, block_size_h,
+								   block_size_w);
 }
 
 RHO__glb void CameraRenderReady_(const Camera* camera, size_t size) {
@@ -181,6 +191,7 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 	Num d_dist;
 
 	RayCastDataPair rcdp;
+
 	Vec point[2];
 
 	const Camera::Collider* collider[3];
@@ -197,8 +208,10 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 
 	Vector reflection_vector;
 
+#///////////////////////////////////////////////////////////////////////////////
+
 	size_t task_size(0);
-	cntr::BidirectionalNode task_node;
+	Camera::Task task_node;
 
 #define RHO__static_task_size 10
 
@@ -212,6 +225,19 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 	Camera::Task* task;
 	Camera::Task* next_task;
 
+#///////////////////////////////////////////////////////////////////////////////
+	/*
+#define RHO__static_rcd_pool_size 10
+
+	RayCastData static_rcd_pool[RHO__static_rcd_pool_size];
+	RayCastDataPool rcd_pool;
+
+	for (size_t i(0); i != RHO__static_rcd_pool_size; ++i) {
+		rcd_pool.Push(static_rcd_pool + i);
+	}*/
+
+#///////////////////////////////////////////////////////////////////////////////
+
 	Vec temp;
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -220,16 +246,16 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 		if (task_size) {
 			// the current have not been done
 			// we pop the task from pre-tracing
-			task = static_cast<Camera::Task*>(task->prev);
+			task = task->prev();
 		} else {
 			// if then current pixel have been done
 			// task_stack will be vacant
 			// then we can process the next
 
-			if (block_size <= render_index) { return; }
+			if (block_size <= render_index) { break; }
 
 			++task_size;
-			task = static_cast<Camera::Task*>(task_node.next);
+			task = task_node.next();
 
 			render_data = camera->render_data_ + render_index;
 			render_data->dist = 0;
@@ -269,8 +295,9 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 		// every point between the first and second hit points is
 		// in the material b
 
-		rcdp[0] = nullptr;
-		rcdp[1] = nullptr;
+		if (rcdp[0]) { rcdp[0].Destroy(); }
+		if (rcdp[1]) { rcdp[1].Destroy(); }
+
 		collider[2] = nullptr;
 
 		{
@@ -282,8 +309,8 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 					rcdp, task->ray);
 
 				if (rcdp[0]) {
-					if (pre_t != rcdp[0]->t) {
-						pre_t = rcdp[0]->t;
+					if (pre_t != rcdp[0].t) {
+						pre_t = rcdp[0].t;
 						collider[2] = camera->collider__ray_cast_order_[i];
 					}
 				}
@@ -292,16 +319,16 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 
 		if (!rcdp[0]) { continue; }
 
-		task->ray.point(point[0], rcdp[0]->t);
+		task->ray.point(point[0], rcdp[0].t);
 
-		if (rcdp[1]) { task->ray.point(point[1], rcdp[1]->t); }
+		if (rcdp[1]) { task->ray.point(point[1], rcdp[1].t); }
 
 #///////////////////////////////////////////////////////////////////////////////
 
 		// calculate the dist fromt origin to point[0]
 		// to get the transmittance through material a
 
-		task->ray.point(temp, rcdp[0]->t / 2);
+		task->ray.point(temp, rcdp[0].t / 2);
 
 		collider[0] = nullptr;
 
@@ -325,7 +352,7 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 
 		// object's material are initialized to default material
 
-		d_dist = abs(camera->root_dim(), task->ray.direct) * rcdp[0]->t;
+		d_dist = abs(camera->root_dim(), task->ray.direct) * rcdp[0].t;
 
 		if (render_data->dist.eq<0>()) { render_data->dist = d_dist; }
 
@@ -339,7 +366,7 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
 
-		rcdp[0]->domain->GetTodTan(tod.tan, rcdp[0], task->ray.direct);
+		rcdp[0].domain->GetTodTan(tod.tan, rcdp[0], task->ray.direct);
 
 #pragma unroll
 		for (dim_t i(0); i != RHO__max_dim; ++i) {
@@ -361,8 +388,8 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 
 		if (transmittance[0].ne<0>() || transmittance[1].ne<0>() ||
 			transmittance[2].ne<0>()) {
-			task->ray.point(temp, rcdp[1] ? ((rcdp[0]->t + rcdp[1]->t) / 2)
-										  : (rcdp[0]->t + 1));
+			task->ray.point(temp, rcdp[1] ? ((rcdp[0].t + rcdp[1].t) / 2)
+										  : (rcdp[0].t + 1));
 
 			collider[1] = nullptr;
 
@@ -413,12 +440,11 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 					// printf("reflection task add\n");
 
 					if (task->depth < camera->max_depth_) {
-						if (task->next == &task_node) {
+						if (task->next() == &task_node) {
 							task->PushPrev(next_task = New<Camera::Task>());
 						} else {
-							cntr::BidirectionalNode::Swap(
-								*task, *(next_task = static_cast<Camera::Task*>(
-											 task->next)));
+							Camera::Task::Swap(*task,
+											   *(next_task = task->next()));
 						}
 
 						Vector::Copy(next_task->ray.origin, point[0]);
@@ -453,12 +479,10 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 				// after (long long) judge
 				// we push a task to task_stack
 
-				if (task->next == &task_node) {
+				if (task->next() == &task_node) {
 					task->PushPrev(next_task = New<Camera::Task>());
 				} else {
-					cntr::BidirectionalNode::Swap(
-						*task,
-						*(next_task = static_cast<Camera::Task*>(task->next)));
+					Camera::Task::Swap(*task, *(next_task = task->next()));
 				}
 
 				Vector::Copy(next_task->ray.origin, point[0]);
@@ -523,15 +547,21 @@ RHO__glb void CameraRenderMain_(const Camera* camera, const size_t block_pos_h,
 		}
 	}
 
-	Camera::Task* n(static_cast<Camera::Task*>(task_node.next));
-	Camera::Task* m;
+#///////////////////////////////////////////////////////////////////////////////
 
-	while (n != &task_node) {
-		m = static_cast<Camera::Task*>(n->next);
-		int k(n - static_task);
-		if (!(0 < k && k < RHO__static_task_size)) { Delete(n); }
-		n = m;
+	while (!task_node.sole()) {
+		Camera::Task* task(static_cast<Camera::Task*>(task_node.next()->Pop()));
+		int offset(task - static_task);
+		if (offset < 0 || RHO__static_task_size <= offset) { Delete(task); }
 	}
+
+#///////////////////////////////////////////////////////////////////////////////
+
+	/*while (!rcd_pool.empty()) {
+		RayCastData* rcd(rcd_pool.Pop());
+		int offset(rcd - static_rcd_pool);
+		if (offset < 0 || RHO__static_rcd_pool_size <= offset) { Delete(rcd); }
+	}*/
 }
 
 }

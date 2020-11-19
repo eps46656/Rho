@@ -14,8 +14,8 @@ const Domain* DomainParallelotope::Refresh() const {
 
 	this->ref_->Refresh();
 
-	ContainFlag flag(0);
-	ContainFlag flag_end(1);
+	size_t flag(0);
+	size_t flag_end(1);
 	flag_end <<= this->ref_->dim();
 
 	this->tod_matrix_.Resize(flag_end);
@@ -26,7 +26,7 @@ const Domain* DomainParallelotope::Refresh() const {
 		const Num* a_i(this->ref_->root_axis());
 		Num* m_i(temp);
 
-		for (ContainFlag reader(1); reader != flag_end;
+		for (size_t reader(1); reader != flag_end;
 			 reader <<= 1, a_i += RHO__max_dim) {
 			if (!(flag & reader)) {
 				Vector::Copy(m_i, a_i);
@@ -57,32 +57,30 @@ size_t DomainParallelotope::RayCastComplexity() const {
 	return 10 * this->ref_->dim() + 5 * this->ref_->root_codim();
 }
 
-RayCastData DomainParallelotope::RayCast(const Ray& ray) const {
+bool DomainParallelotope::RayCast(RayCastData& dst, const Ray& ray) const {
 	RayCastTemp rct;
 
 	if (this->RayCast_(ray, rct)) {
 		if (rct.t[0].ne<0>()) {
-			auto rcd(New<RayCastDataCore_>());
-			rcd->domain = this;
-			rcd->t = rct.t[0];
-			rcd->phase.set(false, rct.t[0] != rct.t[1]);
-			rcd->contain_flag = rct.contain_flag[0];
+			dst.domain = this;
+			dst.t = rct.t[0];
+			dst.phase.set(false, rct.t[0] != rct.t[1]);
+			dst.spare[0] = rct.contain_flag[0];
 
-			return RayCastData(rcd);
+			return true;
 		}
 
 		if (rct.t[1].ne<0>()) {
-			auto rcd(New<RayCastDataCore_>());
-			rcd->domain = this;
-			rcd->t = rct.t[1];
-			rcd->phase.set(true, false);
-			rcd->contain_flag = rct.contain_flag[1];
+			dst.domain = this;
+			dst.t = rct.t[1];
+			dst.phase.set(true, false);
+			dst.spare[0] = rct.contain_flag[1];
 
-			return RayCastData(rcd);
+			return true;
 		}
 	}
 
-	return RayCastData();
+	return false;
 }
 
 bool DomainParallelotope::RayCastB(const Ray& ray) const {
@@ -94,43 +92,41 @@ bool DomainParallelotope::RayCastB(const Ray& ray) const {
 	return rct.t[0].lt<1>();
 }
 
-void DomainParallelotope::RayCastPair(RayCastDataPair& rcdp,
+void DomainParallelotope::RayCastPair(RayCastDataPair& dst,
 									  const Ray& ray) const {
 	RayCastTemp rct;
 	if (!this->RayCast_(ray, rct)) { return; }
 
 	if (rct.t[0].ne<0>()) {
-		if (rcdp[1] < rct.t[0]) { return; }
+		if (dst[1] <= rct.t[0]) { return; }
 
-		auto rcd(New<RayCastDataCore_>());
-		rcd->domain = this;
-		rcd->t = rct.t[0];
-		rcd->phase.set(false, rct.t[0] != rct.t[1]);
-		rcd->contain_flag = rct.contain_flag[0];
+		if (dst[0] <= rct.t[0]) {
+			dst[1].Destroy();
 
-		if (rct.t[0] < rcdp[0]) {
-			rcdp[1] = Move(rcdp[0]);
-			rcdp[0] = rcd;
-		} else {
-			rcdp[1] = rcd;
+			dst[1].domain = this;
+			dst[1].t = rct.t[0];
+			dst[1].phase.set(false, rct.t[0] != rct.t[1]);
+			dst[1].spare[0] = rct.contain_flag[0];
+
 			return;
 		}
+
+		dst[1] = dst[0];
+
+		dst[0].domain = this;
+		dst[0].t = rct.t[0];
+		dst[0].phase.set(false, rct.t[0] != rct.t[1]);
+		dst[0].spare[0] = rct.contain_flag[0];
 	}
 
-	if (rct.t[0] != rct.t[1] && rct.t[1] < rcdp[1]) {
-		auto rcd(New<RayCastDataCore_>());
-		rcd->domain = this;
-		rcd->t = rct.t[1];
-		rcd->phase.set(true, false);
-		rcd->contain_flag = rct.contain_flag[1];
+	if (rct.t[0] == rct.t[1] || dst[1] <= rct.t[1]) { return; }
 
-		if (rct.t[1] < rcdp[0]) {
-			rcdp[1] = Move(rcdp[0]);
-			rcdp[0] = rcd;
-		} else {
-			rcdp[1] = rcd;
-		}
-	}
+	dst[1].Destroy();
+
+	dst[1].domain = this;
+	dst[1].t = rct.t[0];
+	dst[1].phase.set(true, false);
+	dst[1].spare[0] = rct.contain_flag[0];
 }
 
 size_t DomainParallelotope::RayCastFull(RayCastData* dst,
@@ -141,22 +137,20 @@ size_t DomainParallelotope::RayCastFull(RayCastData* dst,
 	size_t size(0);
 
 	if (rct.t[0].ne<0>()) {
-		auto rcd(New<RayCastDataCore_>());
-		rcd->domain = this;
-		rcd->t = rct.t[0];
-		rcd->phase.set(false, rct.t[0] != rct.t[1]);
-		rcd->contain_flag = rct.contain_flag[0];
-		dst[size] = rcd;
+		dst[size].domain = this;
+		dst[size].t = rct.t[0];
+		dst[size].phase.set(false, rct.t[0] != rct.t[1]);
+		dst[size].spare[0] = rct.contain_flag[0];
+
 		++size;
 	}
 
 	if (rct.t[0] != rct.t[1]) {
-		auto rcd(New<RayCastDataCore_>());
-		rcd->domain = this;
-		rcd->t = rct.t[1];
-		rcd->phase.set(true, false);
-		rcd->contain_flag = rct.contain_flag[1];
-		dst[size] = rcd;
+		dst[size].domain = this;
+		dst[size].t = rct.t[1];
+		dst[size].phase.set(true, false);
+		dst[size].spare[0] = rct.contain_flag[1];
+
 		++size;
 	}
 
@@ -176,15 +170,18 @@ bool DomainParallelotope::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	for (dim_t i(this->ref_->dim()); i != this->root_dim(); ++i) {
-		if (direct[i].eq<0>()) {
-			if (origin[i].eq<0>()) { continue; }
-			return false;
-		}
+	if (this->ref_->root_codim() != 0) {
+		dim_t i(this->ref_->dim());
+		do {
+			if (direct[i].eq<0>()) {
+				if (origin[i].eq<0>()) { continue; }
+				return false;
+			}
 
-		Num t(-origin[i] / direct[i]);
-		if (t < rct.t[0] || rct.t[1] < t) { return false; }
-		rct.t[0] = rct.t[1] = t;
+			Num t(-origin[i] / direct[i]);
+			if (t < rct.t[0] || rct.t[1] < t) { return false; }
+			rct.t[0] = rct.t[1] = t;
+		} while (++i != this->ref_->root_dim());
 	}
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -202,16 +199,16 @@ bool DomainParallelotope::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 
 		if (rct.t[0] < t[0]) {
 			rct.t[0] = t[0];
-			rct.contain_flag[0] = ContainFlag(1) << i;
+			rct.contain_flag[0] = size_t(1) << i;
 		} else if (rct.t[0] == t[0]) {
-			rct.contain_flag[0] |= ContainFlag(1) << i;
+			rct.contain_flag[0] |= size_t(1) << i;
 		}
 
 		if (t[1] < rct.t[1]) {
 			rct.t[1] = t[1];
-			rct.contain_flag[1] = ContainFlag(1) << i;
+			rct.contain_flag[1] = size_t(1) << i;
 		} else if (t[1] == rct.t[1]) {
-			rct.contain_flag[1] |= ContainFlag(1) << i;
+			rct.contain_flag[1] |= size_t(1) << i;
 		}
 	}
 
@@ -223,7 +220,7 @@ bool DomainParallelotope::RayCast_(const Ray& ray, RayCastTemp& rct) const {
 void DomainParallelotope::GetTodTan(Num* dst, const RayCastData& rcd,
 									const Num* root_direct) const {
 	dot(this->root_dim(), this->root_dim(), dst, root_direct,
-		this->tod_matrix_[rcd.Get<RayCastDataCore_*>()->contain_flag]);
+		this->tod_matrix_[rcd.spare[0]]);
 }
 
 }

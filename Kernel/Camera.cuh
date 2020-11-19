@@ -33,6 +33,9 @@ public:
 		Num dist;
 		size_t depth;
 		Num3 decay;
+
+		RHO__cuda Task* prev() const;
+		RHO__cuda Task* next() const;
 	};
 
 #///////////////////////////////////////////////////////////////////////////////

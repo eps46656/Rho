@@ -5,23 +5,17 @@
 
 namespace rho {
 
-Space* DomainUnion::root() const {
-	if (this->domain_.empty()) { return nullptr; }
+const Space* DomainUnion::root() const { return this->root_; }
 
-	auto iter(this->domain_.begin());
-
-	Space* root((*iter)->root());
-	++iter;
-
-	for (auto end(this->domain_.end()); iter != end; ++iter) {
-		if (root != (*iter)->root()) { return nullptr; }
-	}
-
-	return root;
+DomainUnion* add_domain(Domain* domain) {
+	this->domain_raw_.Insert(domain);
+	return this;
 }
 
-RBT<Domain*>& DomainUnion::domain() { return this->domain_; }
-const RBT<Domain*>& DomainUnion::domain() const { return this->domain_; }
+DomainUnion* add_domain(Domain* domain) {
+	this->domain_raw_.Erase(domain);
+	return this;
+}
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -29,22 +23,38 @@ DomainUnion::DomainUnion() {}
 
 #///////////////////////////////////////////////////////////////////////////////
 
-bool DomainUnion::Refresh() const {
-	auto iter(this->domain_.begin());
-
-	for (auto end(this->domain_.end()); iter != end; ++iter) {
-		if (this->root() != (*iter)->root() || !(*iter)->Refresh())
-			return false;
+const Domain* DomainUnion::Refresh() const {
+	switch (this->domain_raw_.size()) {
+		case 0: return nullptr;
+		case 1: return (*this->domain_raw_.begin())->Refersh();
 	}
 
-	return true;
+	this->domain_.Clear();
+	this->domain_.Reserve(this->domain_raw_.size());
+	this->root_ = nullptr;
+
+	auto iter(this->domain_raw_.begin());
+
+	for (auto end(this->domain_raw_.end()); iter != end; ++iter) {
+		const Domain* domain((*iter)->Refresh());
+
+		if (domain) {
+			if (this->root_ == nullptr) { this->root_ = domain.root(); }
+			this->domain_.Push(domain);
+		}
+	}
+
+	switch (this->domain_.size()) {
+		case 0: return nullptr;
+		case 1: return this->domain_[0];
+	}
+
+	return this;
 }
 
 bool DomainUnion::Contain(const Num* root_point) const {
-	auto iter(this->domain_.begin());
-
-	for (auto end(this->domain_.end()); iter != end; ++iter) {
-		if ((*iter)->Contain(root_point)) { return true; }
+	for (size_t i(0); i != this->domain_.size(); ++i) {
+		if (this->domain_[i]->Containe(root_point)) { return true; }
 	}
 
 	return false;
@@ -60,32 +70,25 @@ RayCastData DomainUnion::RayCast(const Ray& ray) const {
 	return RayCastData();
 }
 
-bool DomainUnion::RayCastFull(RayCastDataVector& dst, const Ray& ray) const {
-	if (this->domain_.empty()) { return false; }
-
-	if (this->domain_.size() == 1)
-		return (*this->domain_.begin())->RayCastFull(dst, ray);
-
+size_t DomainUnion::RayCastFull(RayCastDataVector& dst, const Ray& ray) const {
 	cntr::Vector<RayCastDataVector> rcdvv;
 	rcdvv.Reserve(this->domain_.size());
 
 	{
-		auto iter(this->domain_.begin());
-		size_t size(0);
+		size_t j(0);
 
-		for (auto end(this->domain_.end()); iter != end; ++iter) {
-			if (size == rcdvv.size()) { rcdvv.Push(); }
+		for (size_t i(0); i != this->domain_.size(); ++i) {
+			if (j == rcdvv.size()) { rcdvv.Push(); }
 
-			bool phase((*iter)->RayCastFull(rcdvv.back(), ray));
-
-			if (rcdvv.back().empty()) {
-				if (phase) { return true; }
+			if (this->domain_[i]->RayCastFull(rcdvv.back(), ray) ==
+				RHO__RayCastFull_in_phase) {
+				return true;
 			} else {
-				++size;
+				++j;
 			}
 		}
 
-		rcdvv.Resize(size);
+		rcdvv.Resize(j);
 	}
 
 	if (rcdvv.size() == 2) {
@@ -103,6 +106,21 @@ bool DomainUnion::RayCastFull(RayCastDataVector& dst, const Ray& ray) const {
 	}
 
 	return false;
+
+#///////////////////////////////////////////////////////////////////////////////
+
+	RayCastDataVector rcdv_a;
+	RayCastDataVector rcdv_b;
+	RayCastDataVector temp;
+
+	if ((this->domain_[0]->RayCastFull(rcdv_a, ray) ==
+		 RHO__RayCastFull_in_phase) ||
+		(this->domain_[1]->RayCastFull(rcdv_b, ray) ==
+		 RHO__RayCastFull_in_phase)) {
+		return true;
+	}
+
+	if (this->domain_.size() == 2) { return }
 }
 
 void DomainUnion::RayCast_(RayCastDataVector& dst, RayCastDataVector& a,
@@ -156,4 +174,5 @@ void DomainUnion::RayCast_(RayCastDataVector& dst, RayCastDataVector& a,
 		}
 	}
 }
+
 }

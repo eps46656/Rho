@@ -16,7 +16,7 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda bool Refresh() const override;
+	RHO__cuda const Space* Refresh() const override;
 
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -24,6 +24,7 @@ public:
 
 #///////////////////////////////////////////////////////////////////////////////
 
+	RHO__cuda size_t RayCastComplexity() const override;
 	RHO__cuda RayCastData RayCast(const Ray& ray) const override;
 	RHO__cuda void RayCastPair(RayCastDataPair& rcdp,
 							   const Ray& ray) const override;
@@ -34,10 +35,6 @@ public:
 
 	RHO__cuda void GetTodTan(Num* dst, const RayCastData& rcd,
 							 const Num* root_direct) const override;
-
-#///////////////////////////////////////////////////////////////////////////////
-
-	RHO__cuda size_t Complexity() const override;
 
 private:
 	Domain* domain_;

@@ -12,133 +12,168 @@ struct BidirectionalNode {
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	Self* prev;
-	Self* next;
+	template<typename T = Self*> RHO__cuda T prev() const;
+	template<typename T = Self*> RHO__cuda T next() const;
+
+	RHO__cuda bool sole() const;
+	RHO__cuda bool Contain(const Self* node) const;
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda BidirectionalNode(): prev(this), next(this) {}
-	RHO__cuda virtual ~BidirectionalNode() { this->Pop(); }
+	RHO__cuda BidirectionalNode();
+	RHO__cuda virtual ~BidirectionalNode();
+
+	RHO__cuda static void Link(Self* x, Self* y);
 
 #///////////////////////////////////////////////////////////////////////////////
 
-	RHO__cuda static void Link(Self* x, Self* y) { (y->prev = x)->next = y; }
+	RHO__cuda inline void PushPrev(Self* node);
+	RHO__cuda inline void PushPrevAll(Self* node);
+	RHO__cuda inline void PushPrevAllExcept(Self* node);
 
-#///////////////////////////////////////////////////////////////////////////////
+	RHO__cuda inline void PushNext(Self* node);
+	RHO__cuda inline void PushNextAll(Self* node);
+	RHO__cuda inline void PushNextAllExcept(Self* node);
 
-	RHO__cuda void PushPrev(Self* node) {
-		if (this == node || this == node->next) { return; }
-		if (node != node->prev) { Link(node->prev, node->next); }
+	RHO__cuda inline Self* Pop();
 
-		Link(this->prev, node);
-		Link(node, this);
-	}
+	RHO__cuda inline void Replace(Self* node);
 
-	RHO__cuda void PushPrev(Self* begin, Self* end) {
-		if (begin->prev != end) { Link(begin->prev, end); }
+	RHO__cuda inline void ReverseAll();
 
-		Self* begin_(begin->prev);
-		Self* end_(end->prev);
+	RHO__cuda inline static void Swap(Self& x, Self& y);
 
-		Link(this->prev, begin);
-		Link(end_, this);
-
-		if (begin_ != end) { Link(begin_, end); }
-	}
-
-	RHO__cuda void PushNext(Self* node) {
-		if (this == node || this == node->prev) { return; }
-		if (node != node->prev) { Link(node->prev, node->next); }
-
-		Link(node, this->next);
-		Link(this, node);
-	}
-
-	RHO__cuda void PushNext(Self* begin, Self* end) {
-		Self* begin_(begin->prev);
-		Self* end_(end->prev);
-
-		Link(end_, this->next);
-		Link(this, begin);
-
-		if (begin_ != end) { Link(begin_, end); }
-	}
-
-	RHO__cuda Self* Pop() {
-		if (this != this->prev) {
-			Link(this->prev, this->next);
-			this->prev = this->next = this;
-		}
-
-		return this;
-	}
-
-	RHO__cuda static void Pop(Self* begin, Self* end) {
-		Self* begin_(begin->prev);
-		Self* end_(end->prev);
-
-		if (begin != end) {
-			Link(begin_, end);
-			Link(begin, end_);
-		}
-	}
-
-	RHO__cuda void Replace(Self* node) {
-		if (this == node) { return; }
-
-		if (node != node->prev) { Link(node->prev, node->next); }
-
-		Link(this->prev, node);
-		Link(node, this->next);
-
-		this->prev = this->next = this;
-	}
-
-	RHO__cuda void Reverse() {
-		Self* prev_(this->prev);
-		Self* next_(this->next);
-
-		Link(next_, this);
-		Link(this, prev_);
-	}
-
-	RHO__cuda void ReverseAll() {
-		rho::Swap(*this->prev, *this->next);
-
-		for (Self* i(this->next); i != this; i = i->next) {
-			rho::Swap(*i->prev, *i->next);
-		}
-	}
-
-	RHO__cuda static void Swap(Self& x, Self& y) {
-		if (&x == &y) { return; }
-
-		Self* x_prev(x.prev);
-		Self* x_next(x.next);
-
-		if (x_prev == &y) {
-			Self* y_prev(y.prev);
-
-			Link(y_prev, &x);
-			Link(&x, &y);
-			Link(&y, x_next);
-		} else if (x_next == &y) {
-			Self* y_next(y.next);
-
-			Link(x_prev, &y);
-			Link(&y, &x);
-			Link(&x, y_next);
-		} else {
-			Self* y_prev(y.prev);
-			Self* y_next(y.next);
-
-			Link(x_prev, &y);
-			Link(&y, x_next);
-			Link(y_prev, &x);
-			Link(&x, y_next);
-		}
-	}
+private:
+	Self* prev_;
+	Self* next_;
 };
+
+#///////////////////////////////////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
+#///////////////////////////////////////////////////////////////////////////////
+
+template<typename T> T BidirectionalNode::prev() const {
+	return static_cast<T>(this->prev_);
+}
+
+template<typename T> T BidirectionalNode::next() const {
+	return static_cast<T>(this->next_);
+}
+
+inline bool BidirectionalNode::sole() const { return this->prev_ == this; }
+
+inline void BidirectionalNode::Link(Self* x, Self* y) {
+	(y->prev_ = x)->next_ = y;
+}
+
+inline bool BidirectionalNode::Contain(const Self* node) const {
+	if (node == this) { return true; }
+
+	for (Self* i(this->next_); i != this; i = i->next_) {
+		if (i == node) { return true; }
+	}
+
+	return false;
+}
+
+#///////////////////////////////////////////////////////////////////////////////
+
+inline BidirectionalNode::BidirectionalNode(): prev_(this), next_(this) {}
+inline BidirectionalNode::~BidirectionalNode() { this->Pop(); }
+
+#///////////////////////////////////////////////////////////////////////////////
+
+void BidirectionalNode::PushPrev(Self* node) {
+	if (node == this || node == this->prev_) { return; }
+	if (!node->sole()) { Link(node->prev_, node->next_); }
+
+	Link(this->prev_, node);
+	Link(node, this);
+}
+
+void BidirectionalNode::PushPrevAll(Self* node) {
+	if (node == this) { return; }
+	Link(this->prev_, node->next_);
+	Link(node, this);
+}
+
+void BidirectionalNode::PushPrevAllExcept(Self* node) {
+	if (node->sole() || this->Contain(node)) { return; }
+	Link(this->prev_, node->next_);
+	Link(node->prev_, this);
+}
+
+void BidirectionalNode::PushNext(Self* node) {
+	if (node == this || node == this->next_) { return; }
+	if (!node->sole()) { Link(node->prev_, node->next_); }
+
+	Link(node, this->next_);
+	Link(this, node);
+}
+
+void BidirectionalNode::PushNextAll(Self* node) {
+	if (node == this) { return; }
+	Link(node->prev_, this->next_);
+	Link(this, node);
+}
+
+void BidirectionalNode::PushNextAllExcept(Self* node) {
+	if (node->sole() || this->Contain(node)) { return; }
+	Link(node->prev_, this->next_);
+	Link(this, node);
+}
+
+#///////////////////////////////////////////////////////////////////////////////
+
+BidirectionalNode::Self* BidirectionalNode::Pop() {
+	if (this->sole()) { return this; }
+	Link(this->prev_, this->next_);
+	this->prev_ = this->next_ = this;
+	return this;
+}
+
+void BidirectionalNode::Replace(Self* node) {
+	if (node == this) { return; }
+	if (!node->sole()) { Link(node->prev_, node->next_); }
+
+	Link(this->prev_, node);
+	Link(node, this->next_);
+
+	this->prev_ = this->next_ = this;
+}
+
+void BidirectionalNode::ReverseAll() {
+	rho::Swap(*this->prev_, *this->next_);
+
+	for (Self* i(this->next_); i != this; i = i->next_) {
+		rho::Swap(*i->prev_, *i->next_);
+	}
+}
+
+void BidirectionalNode::Swap(Self& x, Self& y) {
+	if (&x == &y) { return; }
+
+	Self* x_prev_(x.prev_);
+	Self* y_prev_(y.prev_);
+
+	if (x_prev_ == &y) {
+		Link(y_prev_, &x);
+		Link(&y, x.next_);
+		Link(&x, &y);
+	} else if (y_prev_ == &x) {
+		Link(x_prev_, &y);
+		Link(&x, y.next_);
+		Link(&y, &x);
+	} else {
+		Self* x_next_(x.next_);
+		Self* y_next_(y.next_);
+
+		Link(x_prev_, &y);
+		Link(&y, x_next_);
+		Link(y_prev_, &x);
+		Link(&x, y_next_);
+	}
+}
 
 }
 }

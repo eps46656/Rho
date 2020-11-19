@@ -255,10 +255,23 @@ public:
 
 		RedBlackTreeNode* n(this->root_);
 		while (n->l) { n = n->l; }
-		for (RedBlackTreeNode* m; m = n->next(); n = m) {
+
+		for (RedBlackTreeNode* m; m = n;) {
+			if (n->p != nullptr && n == n->p->l && n->p->r != nullptr) {
+				n = n->p->r;
+				while (n->l) { n = n->l; }
+			} else {
+				n = n->p;
+			}
+
+			static_cast<Node*>(m)->value.~T();
+			Free(m);
+		}
+
+		/*for (RedBlackTreeNode* m; m = n->next(); n = m) {
 			static_cast<Node*>(n)->value.~T();
 			Free(n);
-		}
+		}*/
 
 		this->size_ = 0;
 		this->root_ = nullptr;

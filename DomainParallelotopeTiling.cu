@@ -38,17 +38,15 @@ size_t DomainParallelotopeTiling::RayCastComplexity() const {
 	return this->ref_->root_codim() * 5;
 }
 
-RayCastData DomainParallelotopeTiling::RayCast(const Ray& ray) const {
+bool DomainParallelotopeTiling::RayCast(RayCastData& dst,
+										const Ray& ray) const {
 	Num t(this->RayCast_(ray));
-	RayCastData r;
+	if (t.le<0>()) { return false; }
 
-	if (t.gt<0>()) {
-		r = New<RayCastDataCore>();
-		r->domain = this;
-		r->t = t;
-	}
+	dst.domain = this;
+	dst.t = t;
 
-	return r;
+	return true;
 }
 
 bool DomainParallelotopeTiling::RayCastB(const Ray& ray) const {
@@ -56,21 +54,19 @@ bool DomainParallelotopeTiling::RayCastB(const Ray& ray) const {
 	return t.ne<0>() && t.lt<1>();
 }
 
-void DomainParallelotopeTiling::RayCastPair(RayCastDataPair& rcdp,
+void DomainParallelotopeTiling::RayCastPair(RayCastDataPair& dst,
 											const Ray& ray) const {
 	Num t(this->RayCast_(ray));
+	if (t.le<0>() || dst[1] <= t) { return; }
 
-	if (t.gt<0>() && t < rcdp[1]) {
-		auto rcd(New<RayCastDataCore>());
-		rcd->domain = this;
-		rcd->t = t;
-
-		if (t < rcdp[0]) {
-			rcdp[1] = Move(rcdp[0]);
-			rcdp[0] = rcd;
-		} else {
-			rcdp[1] = rcd;
-		}
+	if (t < dst[0]) {
+		dst[1] = dst[0];
+		dst[0].domain = this;
+		dst[0].t = t;
+	} else {
+		dst[1].Detroy();
+		dst[1].domain = this;
+		dst[1].t = t;
 	}
 }
 
@@ -81,10 +77,8 @@ size_t DomainParallelotopeTiling::RayCastFull(RayCastData* dst,
 	if (t.lt<0>()) { return RHO__Domain__RayCastFull_in_phase; }
 
 	if (t.gt<0>()) {
-		auto rcd(New<RayCastDataCore>());
-		rcd->domain = this;
-		rcd->t = t;
-		dst[0] = rcd;
+		dst[0].domain = this;
+		dst[0].t = t;
 
 		return 1;
 	}

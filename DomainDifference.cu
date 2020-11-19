@@ -64,16 +64,16 @@ size_t DomainDifference::RayCastComplexity() const {
 	return this->domain_b_ ? a + this->domain_b_->RayCastComplexity() : a;
 }
 
-RayCastData DomainDifference::RayCast(const Ray& ray) const {
+bool DomainDifference::RayCast(RayCastData& dst, const Ray& ray) const {
 	RayCastDataVector rcdv_b;
 	size_t rcdv_b_size(this->domain_b_->RayCastFull(rcdv_b, ray));
 
 	switch (rcdv_b_size) {
-		case 0: return this->domain_a_->RayCast(ray);
+		case 0: return this->domain_a_->RayCast(dst, ray);
 		case RHO__Domain__RayCastFull_in_phase: RayCastData();
 	}
 
-	bool rcdv_b_to(rcdv_b[rcdv_b_size - 1]->phase.to());
+	bool rcdv_b_to(rcdv_b[rcdv_b_size - 1].phase.to());
 
 	RayCastDataVector rcdv_a;
 	size_t rcdv_a_size(this->domain_a_->RayCastFull(rcdv_a, ray));
@@ -85,22 +85,28 @@ RayCastData DomainDifference::RayCast(const Ray& ray) const {
 
 	while (i != rcdv_a_size) {
 		if (rcdv_a[i] < rcdv_b[j]) {
-			if (!rcdv_b[j]->phase.fr()) { return Move(rcdv_a[i]); }
+			if (!rcdv_b[j].phase.fr()) {
+				dst = rcdv_a[i];
+				return true;
+			}
+
 			++i;
 		} else if (rcdv_b[j] < rcdv_a[i]) {
-			if (rcdv_a[i]->phase.fr()) {
-				rcdv_b[j]->phase.set(!rcdv_b[j]->phase.fr(), true);
-				return Move(rcdv_b[j]);
+			if (rcdv_a[i].phase.fr()) {
+				rcdv_b[j].phase.set(!rcdv_b[j].phase.fr(), true);
+				dst = rcdv_b[j];
+				return true;
 			}
 
 			++j;
 		} else {
-			bool fr(rcdv_a[i]->phase.fr() && !rcdv_b[j]->phase.fr());
-			bool to(rcdv_a[i]->phase.to() && rcdv_b[j]->phase.to());
+			bool fr(rcdv_a[i].phase.fr() && !rcdv_b[j].phase.fr());
+			bool to(rcdv_a[i].phase.to() && !rcdv_b[j].phase.to());
 
 			if (fr || to) {
-				rcdv_a[i]->phase.set(fr, to);
-				return Move(rcdv_a[i]);
+				rcdv_a[i].phase.set(fr, to);
+				dst = rcdv_a[i];
+				return true;
 			}
 
 			++i;
@@ -108,25 +114,25 @@ RayCastData DomainDifference::RayCast(const Ray& ray) const {
 		}
 
 		if (j == rcdv_b_size) {
-			if (!rcdv_b_to && i != rcdv_a_size) { return Move(rcdv_a[i]); }
-			break;
+			if (rcdv_b_to || i == rcdv_a_size) { return false; }
+			dst = rcdv_a[i];
+			return true;
 		}
 	}
 
-	return RayCastData();
+	return false;
 }
 
-void DomainDifference::RayCastPair(RayCastDataPair& rcdp,
-								   const Ray& ray) const {
+void DomainDifference::RayCastPair(RayCastDataPair& dst, const Ray& ray) const {
 	RayCastDataVector rcdv_b;
 	size_t rcdv_b_size(this->domain_b_->RayCastFull(rcdv_b, ray));
 
 	switch (rcdv_b_size) {
-		case 0: this->domain_a_->RayCastPair(rcdp, ray); return;
+		case 0: this->domain_a_->RayCastPair(dst, ray); return;
 		case RHO__Domain__RayCastFull_in_phase: return;
 	}
 
-	bool rcdv_b_to(rcdv_b[rcdv_b_size - 1]->phase.to());
+	bool rcdv_b_to(rcdv_b[rcdv_b_size - 1].phase.to());
 
 	RayCastDataVector rcdv_a;
 	size_t rcdv_a_size(this->domain_a_->RayCastFull(rcdv_a, ray));
@@ -138,47 +144,47 @@ void DomainDifference::RayCastPair(RayCastDataPair& rcdp,
 
 	while (i != rcdv_a_size) {
 		if (rcdv_a[i] < rcdv_b[j]) {
-			if (rcdp[1] <= rcdv_a[i]) { return; }
+			if (dst[1] <= rcdv_a[i]) { return; }
 
-			if (!rcdv_b[j]->phase.fr()) {
-				if (rcdv_a[i] < rcdp[0]) {
-					rcdp[1] = Move(rcdp[0]);
-					rcdp[0] = Move(rcdv_a[i]);
+			if (!rcdv_b[j].phase.fr()) {
+				if (rcdv_a[i] < dst[0]) {
+					dst[1] = dst[0];
+					dst[0] = rcdv_a[i];
 				} else {
-					rcdp[1] = Move(rcdv_a[i]);
+					dst[1] = rcdv_a[i];
 				}
 			}
 
 			++i;
 		} else if (rcdv_b[j] < rcdv_a[i]) {
-			if (rcdp[1] <= rcdv_b[j]) { return; }
+			if (dst[1] <= rcdv_b[j]) { return; }
 
-			if (rcdv_a[i]->phase.fr()) {
-				rcdv_b[j]->phase.set(!rcdv_b[j]->phase.fr(), true);
+			if (rcdv_a[i].phase.fr()) {
+				rcdv_b[j].phase.set(!rcdv_b[j].phase.fr(), true);
 
-				if (rcdv_b[j] < rcdp[0]) {
-					rcdp[1] = Move(rcdp[0]);
-					rcdp[0] = Move(rcdv_b[j]);
+				if (rcdv_b[j] < dst[0]) {
+					dst[1] = dst[0];
+					dst[0] = rcdv_b[j];
 				} else {
-					rcdp[1] = Move(rcdv_b[j]);
+					dst[1] = rcdv_b[j];
 				}
 			}
 
 			++j;
 		} else {
-			if (rcdp[1] <= rcdv_a[i]) { return; }
+			if (dst[1] <= rcdv_a[i]) { return; }
 
-			bool fr(rcdv_a[i]->phase.fr() && !rcdv_b[j]->phase.fr());
-			bool to(rcdv_a[i]->phase.to() && rcdv_b[j]->phase.to());
+			bool fr(rcdv_a[i].phase.fr() && !rcdv_b[j].phase.fr());
+			bool to(rcdv_a[i].phase.to() && !rcdv_b[j].phase.to());
 
 			if (fr || to) {
-				rcdv_a[i]->phase.set(fr, to);
+				rcdv_a[i].phase.set(fr, to);
 
-				if (rcdv_a[i] < rcdp[0]) {
-					rcdp[1] = Move(rcdp[0]);
-					rcdp[0] = Move(rcdv_a[i]);
+				if (rcdv_a[i] < dst[0]) {
+					dst[1] = dst[0];
+					dst[0] = rcdv_a[i];
 				} else {
-					rcdp[1] = Move(rcdv_a[i]);
+					dst[1] = rcdv_a[i];
 				}
 			}
 
@@ -189,15 +195,15 @@ void DomainDifference::RayCastPair(RayCastDataPair& rcdp,
 		if (j == rcdv_b_size) {
 			if (!rcdv_b_to) {
 				for (; i != rcdv_a_size; ++i) {
-					if (rcdp[1] <= rcdv_a[i]) { return; }
+					if (dst[1] <= rcdv_a[i]) { return; }
 
-					if (rcdp[0] <= rcdv_a[i]) {
-						rcdp[1] = Move(rcdv_a[i]);
+					if (dst[0] <= rcdv_a[i]) {
+						dst[1] = rcdv_a[i];
 						return;
 					}
 
-					rcdp[1] = Move(rcdp[0]);
-					rcdp[0] = Move(rcdv_a[i]);
+					dst[1] = dst[0];
+					dst[0] = rcdv_a[i];
 				}
 			}
 
@@ -215,7 +221,7 @@ size_t DomainDifference::RayCastFull(RayCastData* dst, const Ray& ray) const {
 		case RHO__Domain__RayCastFull_in_phase: return 0;
 	}
 
-	bool rcdv_b_to(rcdv_b[rcdv_b_size - 1]->phase.to());
+	bool rcdv_b_to(rcdv_b[rcdv_b_size - 1].phase.to());
 
 	RayCastDataVector rcdv_a;
 	uint rcdv_a_size(this->domain_a_->RayCastFull(rcdv_a, ray));
@@ -228,8 +234,8 @@ size_t DomainDifference::RayCastFull(RayCastData* dst, const Ray& ray) const {
 
 	while (i != rcdv_a_size) {
 		if (rcdv_a[i] < rcdv_b[j]) {
-			if (!rcdv_b[j]->phase.fr()) {
-				dst[size] = Move(rcdv_a[i]);
+			if (!rcdv_b[j].phase.fr()) {
+				dst[size] = rcdv_a[i];
 
 				if (++size == RHO__Domain__RayCastFull_max_rcd) {
 					return RHO__Domain__RayCastFull_max_rcd;
@@ -238,10 +244,10 @@ size_t DomainDifference::RayCastFull(RayCastData* dst, const Ray& ray) const {
 
 			++i;
 		} else if (rcdv_b[j] < rcdv_a[i]) {
-			if (rcdv_a[i]->phase.fr()) {
-				rcdv_b[j]->phase.set(!rcdv_b[j]->phase.fr(),
-									 !rcdv_b[j]->phase.to());
-				dst[size] = Move(rcdv_b[j]);
+			if (rcdv_a[i].phase.fr()) {
+				rcdv_b[j].phase.set(!rcdv_b[j].phase.fr(),
+									!rcdv_b[j].phase.to());
+				dst[size] = rcdv_b[j];
 
 				if (++size == RHO__Domain__RayCastFull_max_rcd) {
 					return RHO__Domain__RayCastFull_max_rcd;
@@ -259,7 +265,6 @@ size_t DomainDifference::RayCastFull(RayCastData* dst, const Ray& ray) const {
 			| 1  | 1    | 0    | 1     |
 			| 0  | 1    | 1    | 0     |
 			+----+------+------+-------+
-
 			+----+------+------+-------+
 			| to | a_to | b_to | !b_to |
 			+----+------+------+-------+
@@ -270,12 +275,12 @@ size_t DomainDifference::RayCastFull(RayCastData* dst, const Ray& ray) const {
 			+----+------+------+-------+
 			*/
 
-			bool fr(rcdv_a[i]->phase.fr() && !rcdv_b[j]->phase.fr());
-			bool to(rcdv_a[i]->phase.to() && !rcdv_b[j]->phase.to());
+			bool fr(rcdv_a[i].phase.fr() && !rcdv_b[j].phase.fr());
+			bool to(rcdv_a[i].phase.to() && !rcdv_b[j].phase.to());
 
 			if (fr || to) {
-				rcdv_a[i]->phase.set(fr, to);
-				dst[size] = Move(rcdv_a[i]);
+				rcdv_a[i].phase.set(fr, to);
+				dst[size] = rcdv_a[i];
 
 				if (++size == RHO__Domain__RayCastFull_max_rcd) {
 					return RHO__Domain__RayCastFull_max_rcd;
@@ -289,7 +294,7 @@ size_t DomainDifference::RayCastFull(RayCastData* dst, const Ray& ray) const {
 		if (j == rcdv_b_size) {
 			if (!rcdv_b_to) {
 				for (; i != rcdv_a_size; ++i) {
-					dst[size] = Move(rcdv_a[i]);
+					dst[size] = rcdv_a[i];
 
 					if (++size == RHO__Domain__RayCastFull_max_rcd) {
 						return RHO__Domain__RayCastFull_max_rcd;

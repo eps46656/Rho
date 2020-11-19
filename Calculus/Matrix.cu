@@ -406,8 +406,9 @@ void Matrix::Print(dim_t col_dim, dim_t row_dim, const Num* data) {
 	for (dim_t i(0); i != col_dim; ++i) {
 		rho::Print() << "\n" << data[RHO__max_dim * i];
 
-		for (dim_t j(1); j != row_dim; ++j)
+		for (dim_t j(1); j != row_dim; ++j) {
 			rho::Print() << ", " << data[RHO__max_dim * i + j];
+		}
 	}
 
 	rho::Print() << "\n]\n";
@@ -424,8 +425,9 @@ Matrix Matrix::transpose() const& {
 	Matrix r(this->row_dim_, this->col_dim_);
 
 	for (dim_t i(0); i != this->row_dim_; ++i) {
-		for (dim_t j(0); j != this->col_dim_; ++j)
+		for (dim_t j(0); j != this->col_dim_; ++j) {
 			r.get(i, j) = this->get(j, i);
+		}
 	}
 
 	return r;
@@ -437,8 +439,9 @@ Matrix& Matrix::transpose_self() {
 	Swap(this->col_dim_, this->row_dim_);
 
 	for (dim_t i(0); i != this->col_dim_; ++i) {
-		for (dim_t j(i + 1); j != this->row_dim_; ++j)
+		for (dim_t j(i + 1); j != this->row_dim_; ++j) {
 			Swap(this->get(i, j), this->get(j, i));
+		}
 	}
 
 	return *this;
@@ -447,15 +450,17 @@ Matrix& Matrix::transpose_self() {
 #////////////////////////////////////////////////
 
 Num Matrix::det() const {
-	RHO__debug_if(this->col_dim_ != this->row_dim_)
+	RHO__debug_if(this->col_dim_ != this->row_dim_) {
 		RHO__throw__local("dim error");
+	}
 
 	return rho::det(*this, this->col_dim_);
 }
 
 Matrix Matrix::inverse() const {
-	RHO__debug_if(this->col_dim_ != this->row_dim_)
+	RHO__debug_if(this->col_dim_ != this->row_dim_) {
 		RHO__throw__local("dim error");
+	}
 
 	Matrix r(this->col_dim_, this->row_dim_);
 	rho::inverse(this->col_dim_, r, *this);
@@ -463,8 +468,9 @@ Matrix Matrix::inverse() const {
 }
 
 Vector Matrix::cross() const {
-	RHO__debug_if(this->col_dim_ + 1 != this->row_dim_)
+	RHO__debug_if(this->col_dim_ + 1 != this->row_dim_) {
 		RHO__throw__local("dim error");
+	}
 
 	Vector r(this->row_dim_);
 	rho::cross(r, *this, this->row_dim_);

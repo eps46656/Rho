@@ -32,12 +32,12 @@ Vector& Vector::operator=(const Vector& vector) {
 #///////////////////////////////////////////////////////////////////////////////
 
 Num& Vector::operator[](dim_t index) {
-	RHO__debug_if(RHO__max_dim < index) RHO__throw__local("index error");
+	RHO__debug_if(RHO__max_dim < index) { RHO__throw__local("index error"); }
 	return this->data[index];
 }
 
 const Num& Vector::operator[](dim_t index) const {
-	RHO__debug_if(RHO__max_dim < index) RHO__throw__local("index error");
+	RHO__debug_if(RHO__max_dim < index) { RHO__throw__local("index error"); }
 	return this->data[index];
 }
 
@@ -100,7 +100,7 @@ bool operator!=(const Vector& x, const Vector& y) { return !(x == y); }
 #////////////////////////////////////////////////
 
 Vector operator+(const Vector& x, const Vector& y) {
-	RHO__debug_if(x.dim() != y.dim()) RHO__throw__local("dim error");
+	RHO__debug_if(x.dim() != y.dim()) { RHO__throw__local("dim error"); }
 
 	Vector r(x.dim());
 
@@ -119,7 +119,7 @@ Vector&& operator+(Vector&& x, Vector&& y) { return Move(x += y); }
 #////////////////////////////////////////////////
 
 Vector operator-(const Vector& x, const Vector& y) {
-	RHO__debug_if(x.dim() != y.dim()) RHO__throw__local("dim error");
+	RHO__debug_if(x.dim() != y.dim()) { RHO__throw__local("dim error"); }
 
 	Vector r(x.dim());
 
@@ -130,7 +130,7 @@ Vector operator-(const Vector& x, const Vector& y) {
 }
 
 Vector&& operator-(const Vector& x, Vector&& y) {
-	RHO__debug_if(x.dim() != y.dim()) RHO__throw__local("dim error");
+	RHO__debug_if(x.dim() != y.dim()) { RHO__throw__local("dim error"); }
 
 #pragma unroll
 	RHO__full_loop { y[i] = x[i] - y[i]; }
@@ -156,7 +156,7 @@ Vector operator*(const Vector& vector, Num num) {
 }
 
 Num operator*(const Vector& x, const Vector& y) {
-	RHO__debug_if(x.dim() != y.dim()) RHO__throw__local("dim error");
+	RHO__debug_if(x.dim() != y.dim()) { RHO__throw__local("dim error"); }
 
 	Num r(0);
 	dot(x.dim(), r, x, y);
@@ -240,7 +240,7 @@ bool is_zero(dim_t dim, const Num* src) {
 void Vector::set_length(Num length) {
 	Num l(sqrt(sq(this->dim(), *this)));
 
-	RHO__debug_if(l.eq<0>()) RHO__throw__local("zero div");
+	RHO__debug_if(l.eq<0>()) { RHO__throw__local("zero div"); }
 
 	Num a(length / l);
 
@@ -259,7 +259,7 @@ Num abs(const Vector& vector) { return sqrt(sq(vector.dim(), vector)); }
 Num dist(const Vector& x, const Vector& y) { return sqrt(dist_sq(x, y)); }
 
 Num dist_sq(const Vector& x, const Vector& y) {
-	RHO__debug_if(x.dim() != y.dim()) RHO__throw__local("dim error");
+	RHO__debug_if(x.dim() != y.dim()) { RHO__throw__local("dim error"); }
 
 	Num r(0);
 	dist_sq(x.dim(), r, x, y);
@@ -332,7 +332,9 @@ Num angle_cos(dim_t dim, const Num* x, const Num* y) {
 	Num x_sq, dot, y_sq;
 	sq__dot__sq(dim, x_sq, dot, y_sq, x, y);
 
-	RHO__debug_if(x_sq.eq<0>() || y_sq.eq<0>()) RHO__throw__local("zero div");
+	RHO__debug_if(x_sq.eq<0>() || y_sq.eq<0>()) {
+		RHO__throw__local("zero div");
+	}
 
 	return dot / sqrt(x_sq * y_sq);
 }
@@ -345,7 +347,9 @@ Num angle_cos_sq(dim_t dim, const Num* x, const Num* y) {
 	Num x_sq, dot, y_sq;
 	sq__dot__sq(dim, x_sq, dot, y_sq, x, y);
 
-	RHO__debug_if(x_sq.eq<0>() || y_sq.eq<0>()) RHO__throw__local("zero div");
+	RHO__debug_if(x_sq.eq<0>() || y_sq.eq<0>()) {
+		RHO__throw__local("zero div");
+	}
 
 	return sq(dot) / (x_sq * y_sq);
 }
@@ -355,7 +359,7 @@ Num angle_cos_sq(dim_t dim, const Num* x, const Num* y) {
 #///////////////////////////////////////////////////////////////////////////////
 
 Num sq(dim_t dim, const Num* src) {
-	RHO__debug_if(!dim) RHO__throw(, __func__, "dim error");
+	RHO__debug_if(!dim) { RHO__throw(, __func__, "dim error"); }
 
 	if (dim == 3) { return sq(src[0]) + sq(src[1]) + sq(src[2]); }
 
@@ -373,7 +377,7 @@ Num dot(dim_t dim, const Num* x, const Num* y) {
 }
 
 void dot(dim_t dim, Num& dst, const Num* x, const Num* y) {
-	RHO__debug_if(!dim) RHO__throw(, __func__, "dim error");
+	RHO__debug_if(!dim) { RHO__throw(, __func__, "dim error"); }
 
 	if (dim == 3) {
 		dst += x[0] * y[0] + x[1] * y[1] + x[2] * y[2];
@@ -390,14 +394,14 @@ Num dist_sq(dim_t dim, const Num* x, const Num* y) {
 }
 
 void dist_sq(dim_t dim, Num& dst, const Num* x, const Num* y) {
-	RHO__debug_if(!dim) RHO__throw(, __func__, "dim error");
+	RHO__debug_if(!dim) { RHO__throw(, __func__, "dim error"); }
 
 	for (dim_t i(0); i != dim; ++i) { dst += sq(x[i] - y[i]); }
 }
 
 void sq__dot__sq(dim_t dim, Num& dst_x_sq, Num& dst_dot, Num& dst_y_sq,
 				 const Num* x, const Num* y) {
-	RHO__debug_if(!dim) RHO__throw(, __func__, "dim error");
+	RHO__debug_if(!dim) { RHO__throw(, __func__, "dim error"); }
 
 	dst_x_sq = sq(x[0]);
 	dst_dot = x[0] * y[0];

@@ -82,7 +82,8 @@ bool Space::latest() const {
 
 Space::Space(dim_t dim, const Space* parent):
 	dim_(dim), parent_(parent), parent_dim_(parent ? parent->dim_ : dim),
-	latest_arch_(false), latest_(false) {}
+	parent_codim_(this->parent_dim_ - this->dim_), latest_arch_(false),
+	latest_(false) {}
 
 #///////////////////////////////////////////////////////////////////////////////
 #///////////////////////////////////////////////////////////////////////////////
@@ -367,20 +368,12 @@ const Space* Space::RefreshArch() const {
 
 void Space::RefreshArch_() const {
 	if (this->parent_) {
-		RHO__debug_if(this->parent_->dim_ < this->dim_) {
-			RHO__throw__local("dim error");
-		}
-
 		this->root_ = this->parent_->root_;
-		this->parent_dim_ = this->parent_->dim_;
 		this->root_dim_ = this->parent_->root_dim_;
-		this->parent_codim_ = this->parent_dim_ - this->dim_;
 		this->root_codim_ = this->root_dim_ - this->dim_;
 	} else {
 		this->root_ = this;
-		this->parent_dim_ = this->dim_;
 		this->root_dim_ = this->dim_;
-		this->parent_codim_ = 0;
 		this->root_codim_ = 0;
 	}
 
